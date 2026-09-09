@@ -1626,16 +1626,16 @@
         const timeLabel = `${String(h).padStart(2, '0')}:00 ~ ${String((h + 1) % 24).padStart(2, '0')}:00`;
 
         let timeCategoryTag = '';
-        if (h >= 0 && h < 6) timeCategoryTag = '<span class="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 py-0.5 rounded">🌙 새벽</span>';
-        else if (h >= 6 && h < 12) timeCategoryTag = '<span class="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.5 rounded">☀️ 오전</span>';
-        else if (h >= 12 && h < 18) timeCategoryTag = '<span class="text-[10px] bg-sky-100 text-sky-800 font-semibold px-1.5 py-0.5 rounded">🌤️ 오후</span>';
-        else timeCategoryTag = '<span class="text-[10px] bg-indigo-100 text-indigo-800 font-semibold px-1.5 py-0.5 rounded">✨ 저녁</span>';
+        if (h >= 0 && h < 6) timeCategoryTag = '<span class="text-[10px] bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-full border border-purple-200/60">🌙 새벽</span>';
+        else if (h >= 6 && h < 12) timeCategoryTag = '<span class="text-[10px] bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-full border border-amber-200/60">☀️ 오전</span>';
+        else if (h >= 12 && h < 18) timeCategoryTag = '<span class="text-[10px] bg-sky-50 text-sky-700 font-bold px-2 py-0.5 rounded-full border border-sky-200/60">🌤️ 오후</span>';
+        else timeCategoryTag = '<span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200/60">✨ 저녁</span>';
 
         const card = document.createElement('div');
         card.className = `p-3.5 rounded-2xl border transition-all ${
           isCovered 
-            ? 'bg-indigo-50/20 border-indigo-200/90 shadow-xs' 
-            : 'bg-amber-50/40 border-dashed border-amber-300'
+            ? 'bg-white border-slate-200/90 shadow-2xs hover:border-indigo-200 hover:shadow-xs' 
+            : 'bg-amber-50/25 border-dashed border-amber-300/90'
         }`;
 
         let participantsHtml = '';
@@ -1643,20 +1643,15 @@
           participantsHtml = `
             <div class="mt-2.5 space-y-1.5">
               ${list.map(p => `
-                <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-indigo-200/80 shadow-2xs">
+                <div class="flex items-center justify-between bg-slate-50/80 hover:bg-slate-50 px-2.5 py-2 rounded-xl border border-slate-100/90 transition">
                   <div class="flex items-center space-x-2.5 min-w-0">
-                    <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
+                    <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs shadow-2xs shrink-0 ring-1 ring-white">
                       ${escapeHtml(p.name.charAt(0))}
                     </span>
-                    <div class="flex items-center space-x-2 flex-wrap gap-y-0.5 min-w-0">
-                      <span class="text-sm font-black text-slate-900 tracking-tight">${escapeHtml(p.name)}</span>
-                      <span class="text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md shrink-0">
-                        ${escapeHtml(p.cell)}
-                      </span>
-                      <span class="inline-flex items-center space-x-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shrink-0">
-                        <span>🙏</span> <span>기도자</span>
-                      </span>
-                    </div>
+                    <span class="text-sm font-black text-slate-900 tracking-tight truncate">${escapeHtml(p.name)}</span>
+                    <span class="text-[11px] font-bold bg-white text-indigo-700 border border-indigo-100/80 px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                      ${escapeHtml(p.cell)}
+                    </span>
                   </div>
                   <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg text-xs font-semibold transition touch-bounce shrink-0 ml-1">
                     취소
@@ -1667,8 +1662,8 @@
           `;
         } else {
           participantsHtml = `
-            <div class="mt-2 py-2 text-center text-xs text-amber-700 font-semibold bg-amber-50/70 rounded-xl border border-amber-200/50">
-              ⚠️ 신청자가 아직 없습니다.
+            <div class="mt-2 py-2 text-center text-xs text-amber-800/80 font-medium bg-amber-50/60 rounded-xl border border-amber-200/50">
+              ✨ 기도로 이 시간을 채워주세요
             </div>
           `;
         }
@@ -1679,19 +1674,19 @@
               <span class="font-black text-slate-900 text-sm tracking-tight">${timeLabel}</span>
               ${timeCategoryTag}
             </div>
-            <div class="flex items-center space-x-2">
-              <span class="text-xs font-black ${
+            <div class="flex items-center space-x-1.5">
+              <span class="text-[11px] font-black ${
                 isCovered 
-                  ? 'text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full flex items-center space-x-1' 
-                  : 'text-amber-600 font-bold'
+                  ? 'text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-full flex items-center space-x-1' 
+                  : 'text-amber-700 bg-amber-100/70 border border-amber-200/70 px-2 py-0.5 rounded-full'
               }">
-                ${isCovered ? `<span class="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0"></span><span>${list.length}명 참여 중</span>` : '공백'}
+                ${isCovered ? `<span class="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0"></span><span>${list.length}명 참여 중</span>` : '기도 공백'}
               </span>
               <button onclick="openBookingModal(${h})" class="px-2.5 py-1 text-xs font-bold rounded-lg ${
                 isCovered 
-                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' 
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
-              } touch-bounce transition flex items-center space-x-1">
+              } touch-bounce transition flex items-center space-x-0.5">
                 <span>+ 참여</span>
               </button>
             </div>
