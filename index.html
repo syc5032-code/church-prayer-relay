@@ -174,24 +174,27 @@
       <!-- 배경 장식 -->
       <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-30 pointer-events-none -z-0"></div>
 
-      <div class="relative z-10 flex items-start justify-between">
-        <div>
-          <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
-            <span id="curDayTag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800">153일차</span>
-            <span id="curDateText" class="text-sm font-extrabold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-lg border border-indigo-100">9월 9일 (수)</span>
-            <span id="curRoundBadge" class="text-[10px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.5 rounded">1차 순환</span>
-            <span id="curTodayTagBadge" class="hidden text-[10px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded animate-pulse">오늘</span>
-          </div>
-          <div class="mt-1.5 flex items-baseline space-x-2">
-            <h2 id="curLeaderText" class="text-xl font-black text-slate-900">천시온</h2>
-            <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">군단리더 담당</span>
-          </div>
+      <!-- 1열: 날짜/일차 & 달성률/커버시간 -->
+      <div class="relative z-10 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
+          <span id="curTodayTagBadge" class="hidden text-[10px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded-full animate-pulse shrink-0">오늘</span>
+          <span id="curDayTag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800 shrink-0">153일차</span>
+          <span id="curDateText" class="text-sm font-extrabold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">9월 9일 (수)</span>
         </div>
 
-        <div class="text-right" id="summaryStatsRight">
-          <div class="text-2xl font-black text-indigo-600" id="curProgressRatio">0%</div>
-          <p class="text-[11px] font-medium text-slate-500" id="curSlotCount">0 / 24 시간 커버</p>
+        <div class="text-right shrink-0 flex items-baseline space-x-1.5" id="summaryStatsRight">
+          <span class="text-2xl font-black text-indigo-600 leading-none" id="curProgressRatio">0%</span>
+          <span class="text-[11px] font-semibold text-slate-500 whitespace-nowrap" id="curSlotCount">0/24시간 달성</span>
         </div>
+      </div>
+
+      <!-- 2열: 담당 리더 & 순환 차수/순번 -->
+      <div class="relative z-10 mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div class="flex items-center space-x-2 min-w-0">
+          <h2 id="curLeaderText" class="text-lg font-black text-slate-900 tracking-tight truncate">천시온</h2>
+          <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shrink-0">군단리더 담당</span>
+        </div>
+        <span id="curRoundBadge" class="text-xs bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-md border border-purple-100 shrink-0 whitespace-nowrap">6차 순환 (20/25번째)</span>
       </div>
 
       <!-- 진행률 바 -->
@@ -204,17 +207,17 @@
       <!-- 2개 지표: 채워진 시간 vs 총 참여 인원수 -->
       <div id="statsTwoBox" class="relative z-10 mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
         <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-          <div class="text-[10px] text-slate-400 font-medium">24시간 연속 달성</div>
+          <div class="text-[10px] text-slate-400 font-medium truncate">24시간 연속 달성</div>
           <div class="flex items-center space-x-1 mt-0.5">
-            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-            <span class="font-bold text-slate-800">남은 공백: <strong id="emptySlotCount" class="text-amber-600">24</strong>시간</span>
+            <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
+            <span class="font-bold text-slate-800 text-xs truncate">남은 공백: <strong id="emptySlotCount" class="text-amber-600">24</strong>시간</span>
           </div>
         </div>
         <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-          <div class="text-[10px] text-slate-400 font-medium">총 기도 동참자 (동시간 복수참여 포함)</div>
+          <div class="text-[10px] text-slate-400 font-medium truncate">총 기도 동참자 (복수참여)</div>
           <div class="flex items-center space-x-1 mt-0.5">
-            <span class="text-sm">👥</span>
-            <span class="font-bold text-indigo-700"><span id="totalParticipantCount">0</span>명 참여 중</span>
+            <span class="text-xs shrink-0">👥</span>
+            <span class="font-bold text-indigo-700 text-xs truncate"><span id="totalParticipantCount">0</span>명 참여 중</span>
           </div>
         </div>
       </div>
@@ -936,7 +939,7 @@
 
       for (let i = 0; i < firstDayOfWeek; i++) {
         const emptyCell = document.createElement('div');
-        emptyCell.className = "h-14 bg-slate-50/50 rounded-xl";
+        emptyCell.className = "h-[58px] bg-slate-50/50 rounded-xl";
         grid.appendChild(emptyCell);
       }
 
@@ -970,13 +973,13 @@
           }
 
           if (isToday) {
-            cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative ${
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
               isSelected
                 ? 'bg-rose-100/90 border-rose-400 ring-2 ring-rose-500 shadow-md z-10 text-slate-900'
                 : 'bg-rose-50/90 border-rose-200 hover:bg-rose-100 text-slate-800'
             }`;
           } else {
-            cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative ${
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
               isSelected
                 ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300 ring-offset-1 z-10'
                 : 'bg-indigo-50/70 border-indigo-200/80 hover:bg-indigo-100/80 text-slate-800'
@@ -995,7 +998,7 @@
                   : (isSelected ? 'text-indigo-200' : 'text-indigo-600')
               }">${item.dayNum}d</span>
             </div>
-            <div class="text-center">
+            <div class="text-center py-0.5">
               <div class="font-extrabold text-[11px] leading-tight truncate ${
                 isToday
                   ? 'text-rose-950 font-black'
@@ -1008,7 +1011,7 @@
               isToday
                 ? 'text-rose-600 font-semibold'
                 : (isSelected ? 'text-indigo-100' : 'text-slate-500')
-            } font-semibold">
+            } font-semibold leading-none">
               <span>${coveredHours}/24h</span>
               <span>${totalPrayers}명</span>
             </div>
@@ -1016,7 +1019,7 @@
         } else if (item && !item.isPrayerDay) {
           const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey];
           
-          cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+          cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${
             isSelected ? 'ring-2 ring-amber-400' : ''
           } ${
             isBlackout 
@@ -1037,7 +1040,7 @@
                   ${item.reason || '행사일'}
                 </div>
               </div>
-              <div class="h-2"></div>
+              <div class="h-1"></div>
             `;
           } else {
             // 주일예배 (가운데 주일예배만 깔끔하게 표시)
@@ -1050,12 +1053,12 @@
                   주일예배
                 </div>
               </div>
-              <div class="h-2"></div>
+              <div class="h-1"></div>
             `;
           }
         } else {
           // 달력 범위 밖 일자
-          cell.className = "h-14 p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between";
+          cell.className = "h-[58px] p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between";
           cell.innerHTML = `<div>${dayLabelHtml}</div>`;
         }
 
@@ -1262,7 +1265,7 @@
       const pct = Math.round((coveredHours / 24) * 100);
 
       progressRatio.innerText = `${pct}%`;
-      slotCount.innerText = `${coveredHours} / 24 시간 커버`;
+      slotCount.innerText = `${coveredHours}/24시간 달성`;
       progressBar.style.width = `${pct}%`;
       emptySlotCount.innerText = emptyCount;
       totalParticipantCount.innerText = totalPrayers;
