@@ -1491,7 +1491,7 @@
 
       for (let i = 0; i < firstDayOfWeek; i++) {
         const emptyCell = document.createElement('div');
-        emptyCell.className = "h-[58px] bg-slate-50/50 rounded-xl";
+        emptyCell.className = "h-[64px] bg-slate-50/50 rounded-xl";
         grid.appendChild(emptyCell);
       }
 
@@ -1536,24 +1536,24 @@
           if (isFilterActive) {
             if (isMatch) {
               if (isToday) {
-                cell.className = `h-[58px] p-1 rounded-xl border-2 border-emerald-500 bg-emerald-100/90 ring-2 ring-emerald-400 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-900`;
+                cell.className = `h-[64px] p-1 rounded-xl border-2 border-emerald-500 bg-emerald-100/90 ring-2 ring-emerald-400 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-900`;
               } else if (isSelected) {
-                cell.className = `h-[58px] p-1 rounded-xl border-2 border-indigo-700 bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-white`;
+                cell.className = `h-[64px] p-1 rounded-xl border-2 border-indigo-700 bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-white`;
               } else {
-                cell.className = `h-[58px] p-1 rounded-xl border-2 border-indigo-500 bg-indigo-100/95 ring-2 ring-indigo-300/70 shadow-sm z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-indigo-950 font-black`;
+                cell.className = `h-[64px] p-1 rounded-xl border-2 border-indigo-500 bg-indigo-100/95 ring-2 ring-indigo-300/70 shadow-sm z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-indigo-950 font-black`;
               }
             } else {
-              cell.className = `h-[58px] p-1 rounded-xl border border-slate-200/60 bg-slate-50/40 opacity-30 hover:opacity-90 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-400`;
+              cell.className = `h-[64px] p-1 rounded-xl border border-slate-200/60 bg-slate-50/40 opacity-30 hover:opacity-90 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-400`;
             }
           } else {
             if (isToday) {
-              cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
+              cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
                 isSelected
                   ? 'bg-emerald-100/90 border-emerald-400 ring-2 ring-emerald-500 shadow-md z-10 text-slate-900'
                   : 'bg-emerald-50/90 border-2 border-emerald-400/90 hover:bg-emerald-100/90 text-slate-800'
               }`;
             } else {
-              cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
+              cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
                 isSelected
                   ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300 ring-offset-1 z-10'
                   : 'bg-indigo-50/70 border-indigo-200/80 hover:bg-indigo-100/80 text-slate-800'
@@ -1611,63 +1611,60 @@
           const dayNumColor = isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800');
 
           if (isHoliday && isBlackout) {
-            // ⭐️ 공휴일과 교회 행사가 겹칠 때: 둘 다 선명하게 2줄로 표시 & 듀얼 배지 & 조화로운 투톤 배경
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-gradient-to-br from-rose-50/95 via-amber-50/80 to-amber-100/90 border-amber-300 text-slate-900 ${dimClass} ${selectRing}`;
+            // ⭐️ 공휴일과 교회 행사가 겹칠 때: 둘 다 선명하게 2줄로 표시 & 통합 배지 & 조화로운 투톤 배경
+            cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-gradient-to-br from-rose-50/95 via-amber-50/80 to-amber-100/90 border-amber-300 text-slate-900 ${dimClass} ${selectRing}`;
             cell.onclick = () => selectDateKey(dateKey);
 
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
                 <span class="font-black text-[11px] ${dayNumColor}">${day}</span>
-                <div class="flex items-center space-x-0.5 shrink-0">
-                  <span class="text-[7px] shrink-0 text-rose-700 font-extrabold bg-rose-100 px-1 py-0.2 rounded border border-rose-200/60">휴일</span>
-                  <span class="text-[7px] shrink-0 text-amber-800 font-extrabold bg-amber-100 px-1 py-0.2 rounded border border-amber-200/60">행사</span>
-                </div>
+                <span class="text-[7px] font-black bg-gradient-to-r from-rose-100 to-amber-100 text-amber-950 border border-amber-300 px-1 py-0.2 rounded leading-none tracking-tighter shrink-0 whitespace-nowrap">휴일·행사</span>
               </div>
-              <div class="my-auto text-center leading-tight py-0.5">
-                <div class="text-[9.5px] font-black truncate text-rose-800 tracking-tight">
+              <div class="my-auto text-center leading-[1.15] py-0.5">
+                <div class="text-[9px] font-black text-rose-800 tracking-tight break-keep">
                   ${holidayName}
                 </div>
-                <div class="text-[9.5px] font-extrabold truncate text-amber-900 tracking-tight mt-0.5">
+                <div class="text-[9px] font-extrabold text-amber-950 tracking-tight break-keep mt-0.5">
                   ${blackoutName}
                 </div>
               </div>
               <div class="h-0.5"></div>
             `;
           } else if (isHoliday) {
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-rose-50/80 border-rose-200 text-rose-900 ${dimClass} ${selectRing}`;
+            cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-rose-50/80 border-rose-200 text-rose-900 ${dimClass} ${selectRing}`;
             cell.onclick = () => selectDateKey(dateKey);
 
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
                 <span class="font-black text-[11px] text-rose-600">${day}</span>
-                <span class="text-[8px] shrink-0 text-rose-600 font-extrabold bg-rose-100/80 px-1 py-0.2 rounded">공휴일</span>
+                <span class="text-[7.5px] shrink-0 text-rose-700 font-extrabold bg-rose-100/90 px-1 py-0.2 rounded border border-rose-200/60">공휴일</span>
               </div>
-              <div class="my-auto text-center">
-                <div class="text-[10px] font-bold truncate text-rose-800">
+              <div class="my-auto text-center leading-[1.15]">
+                <div class="text-[9.5px] font-bold text-rose-800 tracking-tight break-keep">
                   ${item.reason || holidayName || '공휴일'}
                 </div>
               </div>
-              <div class="h-1"></div>
+              <div class="h-0.5"></div>
             `;
           } else if (isBlackout) {
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-amber-50 border-amber-200 text-amber-900 ${dimClass} ${selectRing}`;
+            cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-amber-50 border-amber-200 text-amber-900 ${dimClass} ${selectRing}`;
             cell.onclick = () => selectDateKey(dateKey);
 
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
                 <span class="font-black text-[11px] ${dayNumColor}">${day}</span>
-                <span class="text-[8px] shrink-0 text-amber-700 font-extrabold bg-amber-100/80 px-1 py-0.2 rounded">행사</span>
+                <span class="text-[7.5px] shrink-0 text-amber-800 font-bold bg-amber-100/90 px-1 py-0.2 rounded border border-amber-200/60">행사</span>
               </div>
-              <div class="my-auto text-center">
-                <div class="text-[10px] font-bold truncate text-amber-800">
+              <div class="my-auto text-center leading-[1.15]">
+                <div class="text-[9.5px] font-extrabold text-amber-900 tracking-tight break-keep">
                   ${item.reason || blackoutName || '행사일'}
                 </div>
               </div>
-              <div class="h-1"></div>
+              <div class="h-0.5"></div>
             `;
           } else {
             // 주일예배 (가운데 주일예배만 깔끔하게 표시)
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-slate-100/80 border-slate-200 text-slate-400 ${dimClass} ${selectRing}`;
+            cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-slate-100/80 border-slate-200 text-slate-400 ${dimClass} ${selectRing}`;
             cell.onclick = () => selectDateKey(dateKey);
 
             cell.innerHTML = `
@@ -1679,13 +1676,13 @@
                   ${item.reason || '주일예배'}
                 </div>
               </div>
-              <div class="h-1"></div>
+              <div class="h-0.5"></div>
             `;
           }
         } else {
           // 달력 범위 밖 일자
           const dimClass = isFilterActive ? 'opacity-30' : '';
-          cell.className = `h-[58px] p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between ${dimClass}`;
+          cell.className = `h-[64px] p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between ${dimClass}`;
           cell.innerHTML = `<div>${dayLabelHtml}</div>`;
         }
 
