@@ -98,6 +98,35 @@
         </div>
       </div>
 
+      <!-- 군단별 맞춤 필터 -->
+      <div class="flex items-center justify-between bg-slate-50/90 p-2 px-3 rounded-xl border border-slate-200/80 text-xs">
+        <label for="leaderFilterSelect" class="font-bold text-slate-700 flex items-center space-x-1 shrink-0">
+          <span>👥</span> <span class="text-slate-900">군단별 모아보기:</span>
+        </label>
+        <div class="flex items-center space-x-1.5 min-w-0">
+          <select id="leaderFilterSelect" onchange="onLeaderFilterChange(this.value)" class="bg-white border border-slate-300 text-slate-900 text-xs font-bold rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 shadow-2xs max-w-[155px] truncate">
+            <option value="ALL">전체 군단 보기</option>
+          </select>
+          <button id="clearLeaderFilterBtn" onclick="clearLeaderFilter()" class="hidden px-2 py-1 text-[11px] bg-indigo-100 hover:bg-indigo-200 text-indigo-800 font-bold rounded-lg transition touch-bounce shrink-0">
+            ✕ 전체
+          </button>
+        </div>
+      </div>
+
+      <!-- 선택된 군단의 향후 일정 모아보기 바 -->
+      <div id="selectedLeaderScheduleBar" class="hidden bg-indigo-50/90 border border-indigo-100 rounded-xl p-2.5 space-y-1.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-1.5">
+            <span class="w-2 h-2 rounded-full bg-indigo-600 animate-pulse shrink-0"></span>
+            <span class="font-extrabold text-indigo-950 text-xs" id="selectedLeaderBarTitle">천시온 군단 담당일정</span>
+          </div>
+          <span id="selectedLeaderMatchCount" class="text-[10px] bg-white border border-indigo-200 text-indigo-700 font-bold px-2 py-0.5 rounded-full shrink-0">총 12회 배정</span>
+        </div>
+        <div id="selectedLeaderChipsContainer" class="flex space-x-1.5 overflow-x-auto pb-0.5 hide-scrollbar">
+          <!-- JS로 각 배정일 버튼 렌더링 -->
+        </div>
+      </div>
+
       <!-- 1. 월별 캘린더 뷰 -->
       <div id="calendarViewContainer" class="space-y-2.5">
 
@@ -679,6 +708,7 @@
     let isAdminMode = false;
     let currentTimeFilter = 'all';
     let currentViewMode = 'calendar';
+    let selectedLeaderFilter = 'ALL';
     let pendingCancelTarget = null;
 
     // 오늘 날짜 Key 반환 함수
@@ -988,6 +1018,9 @@
           ? `<span class="font-black text-[11px] ${isSelected ? 'text-rose-700' : 'text-rose-600'}">${day}</span>`
           : `<span class="font-black text-[11px] ${isSelected ? 'text-white' : (isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800'))}">${day}</span>`;
 
+        const isFilterActive = (selectedLeaderFilter && selectedLeaderFilter !== 'ALL');
+        const isMatch = (item && item.isPrayerDay && item.leader === selectedLeaderFilter);
+
         if (item && item.isPrayerDay) {
           const dayData = prayerData[item.dayNum] || {};
           let coveredHours = 0;
@@ -1000,18 +1033,32 @@
             }
           }
 
-          if (isToday) {
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
-              isSelected
-                ? 'bg-rose-100/90 border-rose-400 ring-2 ring-rose-500 shadow-md z-10 text-slate-900'
-                : 'bg-rose-50/90 border-rose-200 hover:bg-rose-100 text-slate-800'
-            }`;
+          if (isFilterActive) {
+            if (isMatch) {
+              if (isToday) {
+                cell.className = `h-[58px] p-1 rounded-xl border-2 border-rose-500 bg-rose-100/90 ring-2 ring-rose-400 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-900`;
+              } else if (isSelected) {
+                cell.className = `h-[58px] p-1 rounded-xl border-2 border-indigo-700 bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-white`;
+              } else {
+                cell.className = `h-[58px] p-1 rounded-xl border-2 border-indigo-500 bg-indigo-100/95 ring-2 ring-indigo-300/70 shadow-sm z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-indigo-950 font-black`;
+              }
+            } else {
+              cell.className = `h-[58px] p-1 rounded-xl border border-slate-200/60 bg-slate-50/40 opacity-30 hover:opacity-90 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-400`;
+            }
           } else {
-            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
-              isSelected
-                ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300 ring-offset-1 z-10'
-                : 'bg-indigo-50/70 border-indigo-200/80 hover:bg-indigo-100/80 text-slate-800'
-            }`;
+            if (isToday) {
+              cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
+                isSelected
+                  ? 'bg-rose-100/90 border-rose-400 ring-2 ring-rose-500 shadow-md z-10 text-slate-900'
+                  : 'bg-rose-50/90 border-rose-200 hover:bg-rose-100 text-slate-800'
+              }`;
+            } else {
+              cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
+                isSelected
+                  ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300 ring-offset-1 z-10'
+                  : 'bg-indigo-50/70 border-indigo-200/80 hover:bg-indigo-100/80 text-slate-800'
+              }`;
+            }
           }
 
           cell.onclick = () => selectDateKey(dateKey);
@@ -1021,16 +1068,16 @@
             <div class="flex items-center justify-between w-full overflow-hidden leading-none">
               ${dayLabelHtml}
               <span class="text-[9px] font-bold shrink-0 ${
-                isToday
-                  ? (isSelected ? 'text-rose-700' : 'text-rose-600')
-                  : (isSelected ? 'text-indigo-200' : 'text-indigo-600')
+                isMatch
+                  ? (isSelected ? 'text-indigo-200' : 'text-indigo-700 font-black')
+                  : (isToday ? (isSelected ? 'text-rose-700' : 'text-rose-600') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
               }">${item.dayNum}d</span>
             </div>
             <div class="text-center py-0.5">
               <div class="font-extrabold text-[11px] leading-tight truncate ${
-                isToday
-                  ? 'text-rose-950 font-black'
-                  : (isSelected ? 'text-white' : 'text-indigo-950')
+                isMatch && !isSelected && !isToday
+                  ? 'text-indigo-950 font-black'
+                  : (isToday ? 'text-rose-950 font-black' : (isSelected ? 'text-white' : 'text-indigo-950'))
               }">
                 ${item.leader}
               </div>
@@ -1046,8 +1093,9 @@
           `;
         } else if (item && !item.isPrayerDay) {
           const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey];
+          const dimClass = isFilterActive ? 'opacity-30 hover:opacity-80' : '';
           
-          cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${
+          cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${dimClass} ${
             isSelected ? 'ring-2 ring-amber-400' : ''
           } ${
             isBlackout 
@@ -1086,7 +1134,8 @@
           }
         } else {
           // 달력 범위 밖 일자
-          cell.className = "h-[58px] p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between";
+          const dimClass = isFilterActive ? 'opacity-30' : '';
+          cell.className = `h-[58px] p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between ${dimClass}`;
           cell.innerHTML = `<div>${dayLabelHtml}</div>`;
         }
 
@@ -1112,6 +1161,137 @@
     }
 
     // ========================================================
+    // 5-1. 군단별 맞춤 필터 및 향후 일정 모아보기
+    // ========================================================
+    function renderLeaderFilterOptions() {
+      const select = document.getElementById('leaderFilterSelect');
+      if (!select) return;
+      const currentVal = selectedLeaderFilter;
+      select.innerHTML = '<option value="ALL">전체 군단 보기</option>';
+
+      const uniqueLeaders = [];
+      const seen = new Set();
+      schedulerConfig.leaderQueue.forEach(q => {
+        const name = typeof q === 'object' && q !== null ? q.name : q;
+        const role = typeof q === 'object' && q !== null && q.role ? q.role : (name === '유정심' ? '리더' : '군단리더');
+        if (name && !seen.has(name)) {
+          seen.add(name);
+          uniqueLeaders.push({ name, role });
+        }
+      });
+
+      uniqueLeaders.forEach(l => {
+        const opt = document.createElement('option');
+        opt.value = l.name;
+        opt.innerText = `${l.name} ${l.role}`;
+        if (l.name === currentVal) opt.selected = true;
+        select.appendChild(opt);
+      });
+    }
+
+    function onLeaderFilterChange(val) {
+      selectedLeaderFilter = val;
+      const clearBtn = document.getElementById('clearLeaderFilterBtn');
+      const bar = document.getElementById('selectedLeaderScheduleBar');
+
+      if (val === 'ALL') {
+        if (clearBtn) clearBtn.classList.add('hidden');
+        if (bar) bar.classList.add('hidden');
+      } else {
+        if (clearBtn) clearBtn.classList.remove('hidden');
+        renderSelectedLeaderBar(val);
+
+        // 해당 군단의 오늘 날짜 이후 가장 가까운 배정일 찾기
+        const todayKey = getTodayDateKey();
+        const futureMatches = prayerDaysList.filter(d => d.leader === val && d.dateKey >= todayKey);
+        const targetItem = futureMatches.length > 0 ? futureMatches[0] : prayerDaysList.find(d => d.leader === val);
+
+        if (targetItem) {
+          selectedDateKey = targetItem.dateKey;
+          const parts = targetItem.dateKey.split('-');
+          currentCalendarYear = parseInt(parts[0], 10);
+          currentCalendarMonth = parseInt(parts[1], 10);
+        }
+      }
+
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+    }
+
+    function clearLeaderFilter() {
+      const select = document.getElementById('leaderFilterSelect');
+      if (select) select.value = 'ALL';
+      onLeaderFilterChange('ALL');
+    }
+
+    function renderSelectedLeaderBar(leaderName) {
+      const bar = document.getElementById('selectedLeaderScheduleBar');
+      if (!bar) return;
+
+      const matches = prayerDaysList.filter(d => d.leader === leaderName);
+      if (matches.length === 0) {
+        bar.classList.add('hidden');
+        return;
+      }
+
+      bar.classList.remove('hidden');
+      const title = document.getElementById('selectedLeaderBarTitle');
+      const count = document.getElementById('selectedLeaderMatchCount');
+      const chipsContainer = document.getElementById('selectedLeaderChipsContainer');
+
+      const leaderObj = schedulerConfig.leaderQueue.find(q => (typeof q === 'object' ? q.name : q) === leaderName);
+      const role = leaderObj && typeof leaderObj === 'object' && leaderObj.role ? leaderObj.role : (leaderName === '유정심' ? '리더' : '군단리더');
+
+      if (title) title.innerText = `${leaderName} ${role} 담당 일정`;
+      if (count) count.innerText = `총 ${matches.length}회 배정`;
+
+      if (chipsContainer) {
+        chipsContainer.innerHTML = '';
+        const todayKey = getTodayDateKey();
+
+        matches.forEach(d => {
+          const isSelected = (d.dateKey === selectedDateKey);
+          const isToday = (d.dateKey === todayKey);
+          const isPast = (d.dateKey < todayKey);
+
+          const btn = document.createElement('button');
+          btn.className = `shrink-0 px-2.5 py-1 rounded-xl text-xs font-bold border transition touch-bounce text-left flex flex-col justify-center ${
+            isSelected
+              ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-300'
+              : isToday
+              ? 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+              : isPast
+              ? 'bg-slate-50 text-slate-400 border-slate-200'
+              : 'bg-white text-indigo-950 border-indigo-200 hover:bg-indigo-50 shadow-2xs'
+          }`;
+
+          btn.onclick = () => {
+            selectDateKey(d.dateKey);
+            renderSelectedLeaderBar(leaderName);
+          };
+
+          btn.innerHTML = `
+            <div class="flex items-center space-x-1 leading-none mb-0.5">
+              <span class="text-[9px] ${isSelected ? 'text-indigo-200' : 'text-indigo-600 font-extrabold'}">${d.round}차</span>
+              ${isToday ? '<span class="text-[8px] bg-rose-500 text-white px-1 rounded-full font-black">오늘</span>' : ''}
+            </div>
+            <span class="text-[11px] leading-tight font-black">${d.date} (${d.dayNum}d)</span>
+          `;
+          chipsContainer.appendChild(btn);
+        });
+
+        setTimeout(() => {
+          const activeBtn = chipsContainer.querySelector('.ring-2');
+          if (activeBtn) {
+            activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+          }
+        }, 50);
+      }
+    }
+
+    // ========================================================
     // 6. 가로 슬라이더 날짜 칩 렌더링
     // ========================================================
     function renderDateChips() {
@@ -1119,8 +1299,17 @@
       container.innerHTML = '';
 
       const todayKey = getTodayDateKey();
+      const isFilterActive = (selectedLeaderFilter && selectedLeaderFilter !== 'ALL');
+      const displayList = isFilterActive
+        ? prayerDaysList.filter(item => item.leader === selectedLeaderFilter)
+        : prayerDaysList;
 
-      prayerDaysList.forEach((item) => {
+      if (displayList.length === 0) {
+        container.innerHTML = '<div class="text-xs text-slate-400 py-3 text-center w-full">해당 군단의 일정이 없습니다.</div>';
+        return;
+      }
+
+      displayList.forEach((item) => {
         const isSelected = (item.dateKey === selectedDateKey);
         const isToday = (item.dateKey === todayKey);
 
@@ -1182,6 +1371,10 @@
       renderDateChips();
       renderDaySummary();
       renderTimeSlots();
+
+      if (selectedLeaderFilter !== 'ALL') {
+        renderSelectedLeaderBar(selectedLeaderFilter);
+      }
 
       const chip = document.getElementById(`chip-${dateKey}`);
       if (chip) {
@@ -1808,6 +2001,7 @@
       saveConfigData();
       generateDynamicSchedule();
       renderLeaderQueueUI();
+      renderLeaderFilterOptions();
       renderCalendar();
       renderDateChips();
       renderDaySummary();
@@ -1828,6 +2022,7 @@
       saveConfigData();
       generateDynamicSchedule();
       renderLeaderQueueUI();
+      renderLeaderFilterOptions();
       renderCalendar();
       renderDateChips();
       renderDaySummary();
@@ -1842,6 +2037,7 @@
         saveConfigData();
         generateDynamicSchedule();
         renderLeaderQueueUI();
+        renderLeaderFilterOptions();
         renderCalendar();
         renderDateChips();
         renderDaySummary();
@@ -1856,6 +2052,7 @@
         saveConfigData();
         generateDynamicSchedule();
         renderLeaderQueueUI();
+        renderLeaderFilterOptions();
         renderCalendar();
         renderDateChips();
         renderDaySummary();
@@ -2490,6 +2687,7 @@
     // ========================================================
     window.addEventListener('DOMContentLoaded', async () => {
       initData();
+      renderLeaderFilterOptions();
       renderCalendar();
       renderDateChips();
       renderDaySummary();
