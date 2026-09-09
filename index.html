@@ -1,0 +1,2413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🔥 뉴사운드교회 성전 릴레이기도 현황판</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <!-- Supabase 클라이언트 SDK (실시간 클라우드 DB 연동) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    * { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .touch-bounce:active { transform: scale(0.97); }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.03); }
+    }
+    .pulse-subtle { animation: pulse-subtle 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen pb-24">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-md mx-auto px-3 py-2 flex items-center justify-between">
+      <div class="flex items-center space-x-1.5 min-w-0 mr-1">
+        <span class="text-xl shrink-0">🔥</span>
+        <div class="min-w-0">
+          <h1 class="font-black text-slate-900 text-xs sm:text-sm leading-tight whitespace-nowrap">뉴사운드교회 성전 릴레이기도</h1>
+          <p class="text-[10px] text-slate-400 whitespace-nowrap">24시간 연속 릴레이 기도 현황</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-1 shrink-0">
+        <!-- 오늘 바로가기 버튼 (상단 헤더) -->
+        <button onclick="goToToday()" class="px-2 py-1 text-[11px] font-extrabold rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition touch-bounce whitespace-nowrap flex items-center space-x-0.5" title="오늘 날짜로 이동">
+          <span>📍</span>
+          <span id="headerTodayText">오늘</span>
+        </button>
+        <button onclick="openSearchModal()" class="p-1.5 text-slate-500 hover:bg-slate-100 rounded-lg transition touch-bounce shrink-0" title="내 기도시간 찾기">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </button>
+        <button id="adminModeBtn" onclick="toggleAdminMode()" class="px-2 py-1 text-[11px] font-extrabold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition touch-bounce whitespace-nowrap flex items-center">
+          <span id="adminBadgeText">성도 모드</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨테이너 (모바일 최적화 max-w-md) -->
+  <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
+
+    <!-- 클라우드 실시간 동기화 상태 바 -->
+    <div id="cloudStatusBar" class="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200/90 shadow-2xs text-[11px]">
+      <div class="flex items-center space-x-2 truncate mr-2">
+        <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
+        <span id="cloudStatusText" class="font-bold text-slate-700 truncate">로컬 모드 (브라우저 저장)</span>
+      </div>
+      <button onclick="openSupabaseModal()" class="shrink-0 text-indigo-600 hover:text-indigo-800 font-extrabold bg-indigo-50 hover:bg-indigo-100 px-2.5 py-0.5 rounded-lg border border-indigo-100 transition flex items-center space-x-1 touch-bounce text-[10px]">
+        <span>☁️</span> <span id="cloudStatusBtnText">클라우드 연동</span>
+      </button>
+    </div>
+
+    <!-- 관리자 안내 배너 (관리자 모드 활성화 시 표시) -->
+    <div id="adminBanner" class="hidden bg-gradient-to-r from-amber-500 to-amber-600 text-white px-3 py-2 rounded-2xl text-xs flex items-center justify-between shadow-sm">
+      <div class="flex items-center space-x-1.5 truncate mr-1">
+        <span class="text-sm shrink-0">🛡️</span>
+        <span class="font-bold text-[11px] truncate">교역자/관리자</span>
+      </div>
+      <div class="flex items-center space-x-1 shrink-0">
+        <button onclick="openShiftManagerModal()" class="bg-white text-amber-900 hover:bg-amber-50 px-2 py-1 rounded-lg text-[10px] font-bold shadow-xs">
+          ⚡ 행사/순번
+        </button>
+        <button onclick="openSupabaseModal()" class="bg-amber-700/80 hover:bg-amber-700 px-2 py-1 rounded-lg text-[10px] font-semibold text-white">
+          ☁️ DB연동
+        </button>
+        <button onclick="openSummaryModal()" class="bg-amber-700/80 hover:bg-amber-700 px-2 py-1 rounded-lg text-[10px] font-semibold text-white">
+          통계
+        </button>
+        <button onclick="exitAdminMode()" class="underline text-[10px] text-amber-100 ml-0.5">종료</button>
+      </div>
+    </div>
+
+    <!-- 릴레이 일정 선택 컨트롤 (캘린더 뷰 vs 가로 슬라이더 전환) -->
+    <div class="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-1.5">
+          <span class="text-xs font-bold text-slate-800">📅 릴레이 일정 캘린더</span>
+          <span id="ruleBadge" class="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-200/60">
+            주일 쉼 자동순환
+          </span>
+        </div>
+        
+        <!-- 뷰 모드 토글 -->
+        <div class="flex items-center bg-slate-100 p-0.5 rounded-xl text-[11px] font-bold">
+          <button id="viewBtnCalendar" onclick="setViewMode('calendar')" class="px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition">
+            📅 월별 달력
+          </button>
+          <button id="viewBtnSlider" onclick="setViewMode('slider')" class="px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 transition">
+            ↔️ 간편 목록
+          </button>
+        </div>
+      </div>
+
+      <!-- 1. 월별 캘린더 뷰 -->
+      <div id="calendarViewContainer" class="space-y-2.5">
+
+        <!-- [2026년 8월 / 9월 / 10월 대형 헤더 네비게이션] -->
+        <div class="flex items-center justify-between bg-gradient-to-r from-indigo-50 via-white to-indigo-50 border border-indigo-100 rounded-2xl p-2 px-3 shadow-xs">
+          <button onclick="changeMonth(-1)" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-bold text-xs shadow-xs transition" title="이전 달">
+            ◀
+          </button>
+          
+          <div class="text-center">
+            <div class="flex items-center justify-center space-x-1.5">
+              <span class="text-base">📅</span>
+              <h2 id="calendarBigMonthTitle" class="text-base font-black text-indigo-950 tracking-tight">2026년 9월</h2>
+            </div>
+            <p id="calendarMonthSubDesc" class="text-[10px] font-bold text-indigo-600 mt-0.5">
+              9월 릴레이 일정 (146일차 ~ 158일차)
+            </p>
+          </div>
+
+          <button onclick="changeMonth(1)" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-bold text-xs shadow-xs transition" title="다음 달">
+            ▶
+          </button>
+        </div>
+
+        <!-- 8월 / 9월 / 10월 3열 퀵 버튼 탭 -->
+        <div class="grid grid-cols-3 gap-1.5 pt-0.5" id="monthSelectorButtons">
+          <button onclick="setCalendarMonth(8)" id="calMonthBtn-8" class="py-1.5 rounded-xl text-xs font-black transition touch-bounce text-center bg-slate-100 text-slate-600 hover:bg-slate-200">
+            <span>8월 일정</span>
+            <span class="block text-[10px] font-normal opacity-90">134~145일차</span>
+          </button>
+          <button onclick="setCalendarMonth(9)" id="calMonthBtn-9" class="py-1.5 rounded-xl text-xs font-black transition touch-bounce text-center bg-indigo-600 text-white shadow-xs">
+            <span>9월 일정</span>
+            <span class="block text-[10px] font-normal opacity-90">146~158일차</span>
+          </button>
+          <button onclick="setCalendarMonth(10)" id="calMonthBtn-10" class="py-1.5 rounded-xl text-xs font-black transition touch-bounce text-center bg-slate-100 text-slate-600 hover:bg-slate-200">
+            <span>10월 일정</span>
+            <span class="block text-[10px] font-normal opacity-90">순환 계속</span>
+          </button>
+        </div>
+
+        <!-- 오늘 날짜가 아닐 때만 노출되는 '오늘 날짜로 돌아가기' 안내 버튼 -->
+        <div id="returnToTodayBanner" class="hidden text-center pt-0.5">
+          <button onclick="goToToday()" class="inline-flex items-center space-x-1.5 px-3 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-full text-xs font-bold transition touch-bounce shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+            <span>오늘 날짜 (9월 9일 수요일)로 돌아가기</span>
+          </button>
+        </div>
+
+        <!-- 요일 헤더 (일 ~ 토) -->
+        <div class="grid grid-cols-7 text-center text-[11px] font-bold text-slate-400 py-1 border-b border-slate-100">
+          <div class="text-rose-500 font-extrabold">주일</div>
+          <div>월</div>
+          <div>화</div>
+          <div>수</div>
+          <div>목</div>
+          <div>금</div>
+          <div class="text-blue-500">토</div>
+        </div>
+
+        <!-- 7열 달력 날짜 그리드 -->
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1">
+          <!-- JS로 동적 생성 -->
+        </div>
+
+        <!-- 범례 안내 -->
+        <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 px-1 border-t border-slate-100">
+          <div class="flex items-center space-x-2">
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-indigo-600 mr-1"></span>선택</span>
+            <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded bg-rose-100 border border-rose-300 mr-1"></span>오늘</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-indigo-50 border border-indigo-200 mr-1"></span>기도일</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-slate-100 mr-1"></span>주일</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-amber-100 mr-1"></span>행사</span>
+          </div>
+          <span class="font-bold text-indigo-600">날짜 터치 시 이동</span>
+        </div>
+      </div>
+
+      <!-- 2. 가로 슬라이더 뷰 -->
+      <div id="sliderViewContainer" class="hidden space-y-2">
+        <div id="dateScrollContainer" class="flex space-x-2 overflow-x-auto pb-1 hide-scrollbar scroll-smooth">
+          <!-- JS로 기도일 칩 생성 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 현재 선택된 날짜 & 리더 요약 카드 -->
+    <div id="daySummaryCard" class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm relative overflow-hidden">
+      <!-- 배경 장식 -->
+      <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-30 pointer-events-none -z-0"></div>
+
+      <div class="relative z-10 flex items-start justify-between">
+        <div>
+          <div class="flex items-center space-x-1.5 flex-wrap gap-y-1">
+            <span id="curDayTag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800">153일차</span>
+            <span id="curDateText" class="text-sm font-extrabold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-lg border border-indigo-100">9월 9일 (수)</span>
+            <span id="curRoundBadge" class="text-[10px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.5 rounded">1차 순환</span>
+            <span id="curTodayTagBadge" class="hidden text-[10px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded animate-pulse">오늘</span>
+          </div>
+          <div class="mt-1.5 flex items-baseline space-x-2">
+            <h2 id="curLeaderText" class="text-xl font-black text-slate-900">천시온</h2>
+            <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">군단리더 담당</span>
+          </div>
+        </div>
+
+        <div class="text-right" id="summaryStatsRight">
+          <div class="text-2xl font-black text-indigo-600" id="curProgressRatio">0%</div>
+          <p class="text-[11px] font-medium text-slate-500" id="curSlotCount">0 / 24 시간 커버</p>
+        </div>
+      </div>
+
+      <!-- 진행률 바 -->
+      <div class="relative z-10 mt-3" id="progressBarContainer">
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+          <div id="curProgressBar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- 2개 지표: 채워진 시간 vs 총 참여 인원수 -->
+      <div id="statsTwoBox" class="relative z-10 mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+          <div class="text-[10px] text-slate-400 font-medium">24시간 연속 달성</div>
+          <div class="flex items-center space-x-1 mt-0.5">
+            <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+            <span class="font-bold text-slate-800">남은 공백: <strong id="emptySlotCount" class="text-amber-600">24</strong>시간</span>
+          </div>
+        </div>
+        <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
+          <div class="text-[10px] text-slate-400 font-medium">총 기도 동참자 (동시간 복수참여 포함)</div>
+          <div class="flex items-center space-x-1 mt-0.5">
+            <span class="text-sm">👥</span>
+            <span class="font-bold text-indigo-700"><span id="totalParticipantCount">0</span>명 참여 중</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 쉬는 날 / 행사일 전용 안내 박스 -->
+      <div id="blackoutNoticeBox" class="hidden relative z-10 mt-2 bg-amber-50 p-3 rounded-xl border border-amber-200 text-amber-900 text-xs">
+        <div class="font-bold flex items-center space-x-1">
+          <span>🚫</span>
+          <span id="blackoutNoticeTitle">오늘은 릴레이 기도가 쉬는 날입니다</span>
+        </div>
+        <p class="text-[11px] text-amber-700 mt-1" id="blackoutNoticeDesc">
+          (주일 예배 또는 등록된 교회 행사로 인해 릴레이 순번이 다음 기도일로 자동 밀립니다)
+        </p>
+      </div>
+    </div>
+
+    <!-- 시간대 빠른 필터 탭 -->
+    <div id="timeFilterSection" class="flex items-center space-x-1.5 overflow-x-auto pb-1 hide-scrollbar text-xs font-semibold text-slate-500">
+      <button onclick="setTimeFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition">전체 24h</button>
+      <button onclick="setTimeFilter('dawn')" id="filter-dawn" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">🌙 새벽 (00-06)</button>
+      <button onclick="setTimeFilter('morning')" id="filter-morning" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">☀️ 오전 (06-12)</button>
+      <button onclick="setTimeFilter('afternoon')" id="filter-afternoon" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">🌤️ 오후 (12-18)</button>
+      <button onclick="setTimeFilter('evening')" id="filter-evening" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">✨ 저녁 (18-24)</button>
+      <button onclick="setTimeFilter('empty')" id="filter-empty" class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-bold shrink-0 transition">⚠️ 공백만 보기</button>
+    </div>
+
+    <!-- 24시간 타임테이블 리스트 -->
+    <div class="space-y-2" id="timeSlotContainer">
+      <!-- JS로 00시 ~ 23시 렌더링 -->
+    </div>
+
+    <!-- 카카오톡 공유 버튼 -->
+    <div class="pt-2 pb-6">
+      <button onclick="copyKakaoShareText()" class="w-full py-3.5 bg-[#FEE500] hover:bg-[#FDD835] active:scale-[0.98] text-[#191919] font-extrabold rounded-2xl text-sm shadow-md transition flex items-center justify-center space-x-2 border border-yellow-300">
+        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24">
+          <path d="M12 3C6.48 3 2 6.48 2 10.77c0 2.76 1.84 5.18 4.62 6.47l-.95 3.51c-.08.31.25.56.52.41l4.17-2.76c.53.07 1.07.11 1.64.11 5.52 0 10-3.48 10-7.74C22 6.48 17.52 3 12 3z"/>
+        </svg>
+        <span>카카오톡 단톡방 공유 양식 복사</span>
+      </button>
+      <p class="text-[11px] text-center text-slate-400 mt-1.5">클릭하면 현재 선택된 날짜의 공백 시간대와 현황이 복사됩니다.</p>
+    </div>
+
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- 모달 창 모음 -->
+  <!-- ======================================================== -->
+
+  <!-- 1. 기도 신청 모달 -->
+  <div id="bookingModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold text-indigo-600 uppercase" id="modalDayBadge">153일차 천시온 군단</span>
+          <h3 class="text-base font-bold text-slate-900" id="modalHourTitle">07:00 ~ 08:00 기도 신청</h3>
+        </div>
+        <button onclick="closeBookingModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">✕</button>
+      </div>
+
+      <div class="mt-4 space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">성함 *</label>
+          <input type="text" id="inputName" placeholder="실명을 입력해주세요" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">소속 셀 *</label>
+          <input type="text" id="inputCell" placeholder="예: 김태홍셀, 천시온셀, 청년부 등" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">비밀번호 4자리 (취소/수정용) *</label>
+          <input type="password" id="inputPin" maxlength="4" placeholder="숫자 4자리" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 tracking-widest text-center">
+        </div>
+
+        <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-[11px] text-indigo-900 space-y-0.5">
+          <p class="font-bold">💡 안내사항</p>
+          <p>• 같은 시간대에 여러 명이 함께 신청하여 함께 기도하실 수 있습니다.</p>
+          <p>• 성전 본당에서 정해진 1시간 동안 마음을 모아 기도로 자리를 지켜주세요.</p>
+        </div>
+
+        <div class="pt-2 flex space-x-2">
+          <button onclick="closeBookingModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs touch-bounce">
+            취소
+          </button>
+          <button onclick="submitBooking()" class="flex-2 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs touch-bounce shadow-md">
+            기도 신청 완료하기
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 기도 취소 확인 모달 -->
+  <div id="cancelModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900">기도 신청 취소 확인</h3>
+        <button onclick="closeCancelModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+      </div>
+
+      <div class="mt-4 space-y-3">
+        <p class="text-xs text-slate-600" id="cancelTargetInfo">
+          신청자: <strong>홍길동</strong> 님
+        </p>
+
+        <div id="cancelPinSection">
+          <label class="block text-xs font-bold text-slate-700 mb-1">신청 시 입력한 비밀번호 4자리</label>
+          <input type="password" id="inputCancelPin" maxlength="4" placeholder="숫자 4자리" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 tracking-widest text-center">
+        </div>
+
+        <div class="pt-2 flex space-x-2">
+          <button onclick="closeCancelModal()" class="flex-1 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs">
+            닫기
+          </button>
+          <button onclick="confirmCancelBooking()" class="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs touch-bounce shadow-md">
+            신청 취소
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. ⚡ 교회 행사 등록 & 순번 관리 모달 (교역자/간사 전용) -->
+  <div id="shiftManagerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[92vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold text-amber-600 uppercase">스마트 스케줄러 & 관리자</span>
+          <h3 class="text-base font-bold text-slate-900">⚡ 교회 행사 & 릴레이 순번 관리</h3>
+        </div>
+        <button onclick="closeShiftManagerModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+      </div>
+
+      <div class="mt-3 overflow-y-auto flex-1 pr-1 space-y-4 text-xs">
+        
+        <!-- 원리 안내 카드 -->
+        <div class="bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 space-y-1">
+          <div class="font-bold text-indigo-900 flex items-center space-x-1">
+            <span>✨</span> <span>순환 배정 & 연쇄 밀림 원리</span>
+          </div>
+          <p class="text-[11px] text-indigo-700 leading-relaxed">
+            • <strong>주일(예배)은 자동으로 쉼</strong> 처리됩니다.<br>
+            • <strong>김은진 군단 3회, 김태홍 군단 2회, 유정심 리더 포함</strong> 1사이클 순번이 끝나면 <strong>2차, 3차 무한 자동 순환</strong>됩니다.<br>
+            • 수련회 등 행사 기간(시작~종료)을 등록하면 <strong>해당 일수만큼 그 뒤 군단 일정이 순서 그대로 자동 연쇄 밀림</strong>됩니다!
+          </p>
+        </div>
+
+        <!-- 1) 교회 행사(제외일) 신규 등록 폼 (단일일/기간 선택) -->
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 flex items-center space-x-1">
+              <span>🚫</span> <span>교회 행사 기간 등록 (그 뒤 일정 자동 연기)</span>
+            </span>
+            <span class="text-[10px] text-amber-600 font-bold">당일 or 기간</span>
+          </div>
+          
+          <div class="space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 mb-1">시작 날짜 *</label>
+                <input type="date" id="inputEventStartDate" class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
+              </div>
+              <div>
+                <label class="block text-[10px] font-semibold text-slate-500 mb-1">종료 날짜 (당일이면 비움)</label>
+                <input type="date" id="inputEventEndDate" class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs" placeholder="당일 종료 시 비움">
+              </div>
+            </div>
+            <div>
+              <label class="block text-[10px] font-semibold text-slate-500 mb-1">행사 사유 / 명칭 *</label>
+              <input type="text" id="inputEventReason" placeholder="예: 전교인 여름수련회, 특별새벽기도회 등" class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
+            </div>
+          </div>
+
+          <button onclick="addBlackoutDate()" class="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg text-xs touch-bounce shadow-xs flex items-center justify-center space-x-1">
+            <span>+ 교회 행사 등록 (연속 일수만큼 자동 연쇄 밀림)</span>
+          </button>
+        </div>
+
+        <!-- 2) 현재 등록된 교회 행사/쉼 목록 -->
+        <div>
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-slate-800 block">📋 등록된 교회 행사 목록</span>
+            <span id="blackoutCountBadge" class="text-[10px] text-slate-400">총 0일</span>
+          </div>
+          <div id="blackoutListContainer" class="space-y-1.5 max-h-36 overflow-y-auto">
+            <!-- JS로 동적 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 3) 릴레이 기도 순환 순서 관리 (동적 추가/삭제/이동) -->
+        <div class="border-t border-slate-100 pt-3 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-slate-800 flex items-center space-x-1">
+                <span>🔁</span> <span>릴레이 기도 순번 순서 관리</span>
+              </span>
+              <p class="text-[10px] text-slate-400" id="queueStatusText">김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함</p>
+            </div>
+            <button onclick="resetLeaderQueueToDefault()" class="text-[10px] text-indigo-600 hover:underline font-bold bg-indigo-50 px-2 py-1 rounded-md border border-indigo-100">
+              ↺ 기본 25순번 초기화
+            </button>
+          </div>
+
+          <!-- 신규 순번 추가 폼 -->
+          <div class="bg-indigo-50/50 p-2.5 rounded-xl border border-indigo-100 space-y-1.5">
+            <span class="text-[11px] font-bold text-indigo-950 block">➕ 새로운 기도 순번 추가</span>
+            <div class="grid grid-cols-12 gap-1.5">
+              <input type="text" id="newLeaderName" placeholder="성함 (예: 홍길동)" class="col-span-5 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
+              <select id="newLeaderRole" class="col-span-4 px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold">
+                <option value="군단리더">군단리더</option>
+                <option value="리더">리더</option>
+                <option value="기타">기타</option>
+              </select>
+              <button onclick="addLeaderToQueue()" class="col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs touch-bounce">
+                + 추가
+              </button>
+            </div>
+          </div>
+
+          <!-- 순번 목록 (순서 변경 ▲/▼ 및 삭제 ✕) -->
+          <div id="leaderQueueList" class="space-y-1 bg-slate-50 p-2 rounded-xl border border-slate-200 max-h-52 overflow-y-auto">
+            <!-- JS로 각 순번 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 4) 기본 요일 쉼 설정 옵션 -->
+        <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-700">기본 요일 쉼 설정</span>
+          <div class="flex items-center space-x-3">
+            <label class="flex items-center space-x-1 cursor-pointer">
+              <input type="checkbox" id="cfgExcludeSunday" onchange="toggleDayExclusion('sunday', this.checked)" class="rounded text-indigo-600" checked>
+              <span class="font-semibold text-slate-700">주일(일) 쉼</span>
+            </label>
+            <label class="flex items-center space-x-1 cursor-pointer">
+              <input type="checkbox" id="cfgExcludeFriday" onchange="toggleDayExclusion('friday', this.checked)" class="rounded text-indigo-600">
+              <span class="font-semibold text-slate-700">금요일 쉼</span>
+            </label>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- 하단 닫기 -->
+      <div class="pt-3 border-t border-slate-100 flex space-x-2">
+        <button onclick="closeShiftManagerModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs">
+          확인 완료 및 닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 내 기도시간 찾기 모달 -->
+  <div id="searchModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <span>🔍</span> <span>내 기도시간 조회</span>
+        </h3>
+        <button onclick="closeSearchModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+      </div>
+
+      <div class="mt-4">
+        <div class="flex space-x-2">
+          <input type="text" id="searchNameInput" placeholder="신청하신 성함을 입력하세요" class="flex-1 px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" onkeyup="if(event.key==='Enter') doSearchName()">
+          <button onclick="doSearchName()" class="px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-xs touch-bounce">검색</button>
+        </div>
+
+        <div id="searchResults" class="mt-4 max-h-64 overflow-y-auto space-y-2 text-xs">
+          <p class="text-center text-slate-400 py-6">성함을 입력하시면 배정된 날짜와 시간을 찾아드립니다.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 관리자 전체 현황 요약 통계 모달 -->
+  <div id="summaryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold text-indigo-600 uppercase">교역자/간사 현황판</span>
+          <h3 class="text-base font-bold text-slate-900">전체 릴레이 달성 현황 통계</h3>
+        </div>
+        <button onclick="closeSummaryModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+      </div>
+
+      <div class="mt-3 overflow-y-auto flex-1 pr-1 space-y-2 text-xs" id="summaryList">
+        <!-- 요약 리스트 렌더링 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Supabase 클라우드 DB 연동 설정 모달 -->
+  <div id="supabaseModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-xs font-bold text-indigo-600 uppercase">클라우드 실시간 동기화</span>
+            <span id="modalCloudStatusBadge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600">미연결 (로컬)</span>
+          </div>
+          <h3 class="text-base font-bold text-slate-900">☁️ Supabase 클라우드 연동</h3>
+        </div>
+        <button onclick="closeSupabaseModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">✕</button>
+      </div>
+
+      <div class="mt-3 overflow-y-auto flex-1 pr-1 space-y-3.5 text-xs">
+        <!-- 3단계 빠른 연동 가이드 -->
+        <div class="bg-indigo-50/80 p-3 rounded-xl border border-indigo-100 space-y-1.5 text-indigo-950">
+          <p class="font-bold flex items-center space-x-1">
+            <span>🚀</span> <span>Supabase 3분 빠른 연동 방법</span>
+          </p>
+          <ol class="list-decimal list-inside space-y-1 text-[11px] text-indigo-900 leading-relaxed">
+            <li><a href="https://supabase.com" target="_blank" class="text-indigo-700 underline font-bold">Supabase(무료)</a> 로그인 후 새 프로젝트 생성</li>
+            <li>왼쪽 메뉴 <strong>SQL Editor</strong>에서 프로젝트 안의 <code class="bg-white px-1 py-0.5 rounded border border-indigo-200 font-mono text-[10px]">supabase_schema.sql</code> 내용 복사 붙여넣기 후 <strong>[Run]</strong> 실행</li>
+            <li><strong>Project Settings ➔ API</strong> 메뉴에서 <strong>Project URL</strong>과 <strong>anon public key</strong>를 복사하여 아래에 입력</li>
+          </ol>
+        </div>
+
+        <!-- 설정 입력 폼 -->
+        <div class="space-y-2.5">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Project URL *</label>
+            <input type="text" id="inputSupabaseUrl" placeholder="예: https://abcdefghijklm.supabase.co" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono">
+          </div>
+
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">anon public key *</label>
+            <textarea id="inputSupabaseKey" rows="2" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-[10px] break-all"></textarea>
+          </div>
+        </div>
+
+        <!-- 액션 버튼들 -->
+        <div class="space-y-2 pt-1">
+          <button onclick="saveSupabaseConfig()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs touch-bounce shadow-md flex items-center justify-center space-x-1.5">
+            <span>🔗</span> <span>연결 테스트 및 실시간 동기화 시작</span>
+          </button>
+
+          <button onclick="uploadLocalDataToCloud()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs touch-bounce shadow-xs flex items-center justify-center space-x-1.5">
+            <span>⬆️</span> <span>현재 로컬 데이터를 클라우드로 일괄 업로드</span>
+          </button>
+
+          <button onclick="disconnectSupabase()" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold rounded-xl text-xs transition">
+            🔌 연동 해제 (로컬 모드로 전환)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 알림 토스트 -->
+  <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-xl opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2">
+    <span id="toastIcon">✅</span>
+    <span id="toastMsg">알림 메시지</span>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- JavaScript 로직 (2026년 동기화 & 스마트 스케줄러) -->
+  <!-- ======================================================== -->
+  <script>
+    // 6차 릴레이 공식 기본 25순번 (김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함)
+    const DEFAULT_CYCLE_QUEUE = [
+      { name: "김용태", role: "군단리더" },
+      { name: "이연경", role: "군단리더" },
+      { name: "박진호", role: "군단리더" },
+      { name: "김은진", role: "군단리더", note: "1차" },
+      { name: "이성령", role: "군단리더" },
+      { name: "김태홍", role: "군단리더", note: "1차" },
+      { name: "천은빈", role: "군단리더" },
+      { name: "유정심", role: "리더" },
+      { name: "서진환", role: "군단리더" },
+      { name: "최윤석", role: "군단리더" },
+      { name: "김우람", role: "군단리더" },
+      { name: "김은진", role: "군단리더", note: "2차" },
+      { name: "강수오", role: "군단리더" },
+      { name: "김정금", role: "군단리더" },
+      { name: "이성재", role: "군단리더" },
+      { name: "김태홍", role: "군단리더", note: "2차" },
+      { name: "라하라", role: "군단리더" },
+      { name: "김은진", role: "군단리더", note: "3차" },
+      { name: "장한나", role: "군단리더" },
+      { name: "천시온", role: "군단리더" },
+      { name: "곽신재", role: "군단리더" },
+      { name: "이정화", role: "군단리더" },
+      { name: "김성현", role: "군단리더" },
+      { name: "류고운", role: "군단리더" },
+      { name: "최순호", role: "군단리더" }
+    ];
+
+    const STORAGE_KEY_CONFIG = 'NEWSOUND_SCHEDULER_CONFIG_V5';
+    const STORAGE_KEY_PRAYER = 'NEWSOUND_PRAYER_DATA_V3';
+    const STORAGE_KEY_SUPABASE = 'NEWSOUND_SUPABASE_CONFIG_V1';
+
+    let supabaseClient = null;
+    let supabaseRealtimeChannel = null;
+    let isCloudConnected = false;
+
+    let schedulerConfig = {
+      startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
+      startDayNum: 134,        // 134일차
+      totalDays: 120,          // 4개월 분량 넉넉하게 생성
+      excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
+      excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
+      leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
+      blackoutDates: {}
+    };
+
+    let calendarDaysMap = {}; // "YYYY-MM-DD" => dayItem
+    let prayerDaysList = [];  // 기도일만 모은 순서 리스트
+    let prayerData = {};      // { [dayNum]: { [hour]: [ { id, name, cell, pin, bookedAt }, ... ] } }
+    
+    let currentCalendarYear = 2026;
+    let currentCalendarMonth = 9;   // 기본 9월
+    let selectedDateKey = "2026-09-09"; // 오늘 (9/9) 기본 선택
+    
+    let isAdminMode = false;
+    let currentTimeFilter = 'all';
+    let currentViewMode = 'calendar';
+    let pendingCancelTarget = null;
+
+    // 오늘 날짜 Key 반환 함수
+    function getTodayDateKey() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    // ========================================================
+    // 2. 스마트 자동 배정 및 연쇄 밀림 엔진 (Core Engine)
+    // ========================================================
+    function generateDynamicSchedule() {
+      calendarDaysMap = {};
+      prayerDaysList = [];
+
+      const startParts = schedulerConfig.startDate.split('-');
+      const current = new Date(parseInt(startParts[0], 10), parseInt(startParts[1], 10) - 1, parseInt(startParts[2], 10));
+      
+      let leaderIdx = 0;
+      let dayNum = schedulerConfig.startDayNum;
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+
+      for (let i = 0; i < schedulerConfig.totalDays; i++) {
+        const y = current.getFullYear();
+        const m = current.getMonth() + 1;
+        const d = current.getDate();
+        const dayOfWeek = current.getDay();
+        const dateKey = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const displayDate = `${m}/${d} (${dayNames[dayOfWeek]})`;
+
+        let isExcluded = false;
+        let reason = '';
+
+        if (schedulerConfig.excludeSunday && dayOfWeek === 0) {
+          isExcluded = true;
+          reason = '주일예배';
+        } else if (schedulerConfig.excludeFriday && dayOfWeek === 5) {
+          isExcluded = true;
+          reason = '금요기도회';
+        } else if (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) {
+          isExcluded = true;
+          reason = schedulerConfig.blackoutDates[dateKey];
+        }
+
+        if (isExcluded) {
+          const item = {
+            isPrayerDay: false,
+            dateKey: dateKey,
+            year: y,
+            month: m,
+            day: d,
+            dayOfWeek: dayOfWeek,
+            date: displayDate,
+            reason: reason
+          };
+          calendarDaysMap[dateKey] = item;
+        } else {
+          const qLength = schedulerConfig.leaderQueue.length;
+          const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
+          const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
+          const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? qItem.role : (leaderName === '유정심' ? '리더' : '군단리더');
+          const round = Math.floor(leaderIdx / qLength) + 1;
+
+          const item = {
+            isPrayerDay: true,
+            dateKey: dateKey,
+            year: y,
+            month: m,
+            day: d,
+            dayOfWeek: dayOfWeek,
+            dayNum: dayNum,
+            date: displayDate,
+            leader: leaderName,
+            role: leaderRole,
+            round: round
+          };
+
+          calendarDaysMap[dateKey] = item;
+          prayerDaysList.push(item);
+
+          leaderIdx++;
+          dayNum++;
+        }
+
+        current.setDate(current.getDate() + 1);
+      }
+    }
+
+    // ========================================================
+    // 3. 로컬 스토리지 데이터 로드 & 초기화
+    // ========================================================
+    function initData() {
+      const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
+      if (savedConfig) {
+        try {
+          schedulerConfig = JSON.parse(savedConfig);
+        } catch (e) {
+          schedulerConfig = null;
+        }
+      }
+
+      if (!schedulerConfig || !schedulerConfig.leaderQueue || schedulerConfig.leaderQueue.length === 0) {
+        let oldBlackouts = {};
+        const oldPrevStr = localStorage.getItem('NEWSOUND_SCHEDULER_CONFIG_V4') || localStorage.getItem('NEWSOUND_SCHEDULER_CONFIG_V3');
+        if (oldPrevStr) {
+          try {
+            const oldConf = JSON.parse(oldPrevStr);
+            if (oldConf.blackoutDates) oldBlackouts = oldConf.blackoutDates;
+          } catch(e){}
+        }
+
+        schedulerConfig = {
+          startDate: "2026-08-18",
+          startDayNum: 134,
+          totalDays: 120,
+          excludeFriday: false,
+          excludeSunday: true,
+          leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
+          blackoutDates: oldBlackouts
+        };
+        saveConfigData();
+      }
+
+      // 리더 역할 동기화 (유정심 리더 및 어른 리더 -> 리더 전환) 및 최순호 추가
+      if (schedulerConfig && schedulerConfig.leaderQueue) {
+        let queueModified = false;
+        schedulerConfig.leaderQueue.forEach(item => {
+          if (typeof item === 'object' && item !== null) {
+            if (item.name === '유정심' && item.role !== '리더') {
+              item.role = '리더';
+              queueModified = true;
+            } else if (item.role === '어른 리더') {
+              item.role = '리더';
+              queueModified = true;
+            }
+          }
+        });
+
+        const hasChoi = schedulerConfig.leaderQueue.some(item => {
+          const n = typeof item === 'object' && item !== null ? item.name : item;
+          return n === '최순호';
+        });
+        if (!hasChoi) {
+          schedulerConfig.leaderQueue.push({ name: "최순호", role: "군단리더" });
+          queueModified = true;
+        }
+
+        if (queueModified) {
+          saveConfigData();
+        }
+      }
+
+      generateDynamicSchedule();
+
+      const savedPrayer = localStorage.getItem(STORAGE_KEY_PRAYER);
+      if (savedPrayer) {
+        try {
+          prayerData = JSON.parse(savedPrayer);
+        } catch (e) {
+          prayerData = {};
+        }
+      } else {
+        // 오늘(153일차 천시온) 및 134일차 샘플 데이터
+        prayerData = {
+          "153": {
+            "0": [
+              { id: "s1", name: "천시온", cell: "천시온셀", pin: "0000", bookedAt: new Date().toISOString() },
+              { id: "s2", name: "박소망", cell: "천시온셀", pin: "1234", bookedAt: new Date().toISOString() }
+            ],
+            "6": [
+              { id: "s3", name: "김하늘", cell: "김은진셀", pin: "1234", bookedAt: new Date().toISOString() }
+            ],
+            "12": [
+              { id: "s4", name: "이지은", cell: "김태홍셀", pin: "1234", bookedAt: new Date().toISOString() }
+            ],
+            "21": [
+              { id: "s5", name: "최은혜", cell: "천시온셀", pin: "1234", bookedAt: new Date().toISOString() }
+            ]
+          },
+          "134": {
+            "0": [
+              { id: "s6", name: "김용태", cell: "김용태셀", pin: "0000", bookedAt: new Date().toISOString() }
+            ]
+          }
+        };
+        savePrayerData();
+      }
+
+      // 오늘 날짜로 기본 세팅
+      const todayKey = getTodayDateKey();
+      if (calendarDaysMap[todayKey]) {
+        selectedDateKey = todayKey;
+        const parts = todayKey.split('-');
+        currentCalendarYear = parseInt(parts[0], 10);
+        currentCalendarMonth = parseInt(parts[1], 10);
+      } else if (prayerDaysList.length > 0) {
+        selectedDateKey = prayerDaysList[0].dateKey;
+      }
+    }
+
+    function saveConfigData(syncToCloud = true) {
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
+      if (syncToCloud && isCloudConnected && supabaseClient) {
+        supabaseClient.from('relay_config').upsert({
+          id: 'main_config',
+          config_data: schedulerConfig,
+          updated_at: new Date().toISOString()
+        }).then(({ error }) => {
+          if (error) console.error('Supabase config sync error:', error);
+        });
+      }
+    }
+
+    function savePrayerData() {
+      localStorage.setItem(STORAGE_KEY_PRAYER, JSON.stringify(prayerData));
+    }
+
+    // ========================================================
+    // 4. 오늘 바로가기 (Go to Today)
+    // ========================================================
+    function goToToday() {
+      const todayKey = getTodayDateKey();
+      const parts = todayKey.split('-');
+      currentCalendarYear = parseInt(parts[0], 10);
+      currentCalendarMonth = parseInt(parts[1], 10);
+      selectedDateKey = todayKey;
+
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+
+      const targetChip = document.getElementById(`chip-${todayKey}`);
+      if (targetChip) {
+        targetChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+
+      showToast(`오늘 날짜 (${parseInt(parts[1], 10)}월 ${parseInt(parts[2], 10)}일)로 이동했습니다.`, '📍');
+    }
+
+    // ========================================================
+    // 5. 월별 캘린더 렌더링
+    // ========================================================
+    function renderCalendar() {
+      const bigTitle = document.getElementById('calendarBigMonthTitle');
+      const subDesc = document.getElementById('calendarMonthSubDesc');
+      if (bigTitle) bigTitle.innerText = `${currentCalendarYear}년 ${currentCalendarMonth}월`;
+      
+      if (subDesc) {
+        if (currentCalendarMonth === 8) {
+          subDesc.innerText = '8월 릴레이 일정 (134일차 ~ 145일차)';
+        } else if (currentCalendarMonth === 9) {
+          subDesc.innerText = '9월 릴레이 일정 (146일차 ~ 158일차)';
+        } else {
+          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정 (순환 배정 계속)`;
+        }
+      }
+
+      // 3열 버튼 하이라이트 갱신
+      [8, 9, 10].forEach(m => {
+        const btn = document.getElementById(`calMonthBtn-${m}`);
+        if (btn) {
+          if (m === currentCalendarMonth) {
+            btn.className = "py-1.5 rounded-xl text-xs font-black transition touch-bounce text-center bg-indigo-600 text-white shadow-xs ring-2 ring-indigo-300";
+          } else {
+            btn.className = "py-1.5 rounded-xl text-xs font-black transition touch-bounce text-center bg-slate-100 text-slate-600 hover:bg-slate-200";
+          }
+        }
+      });
+
+      // 오늘 날짜가 아니거나 다른 달을 보고 있을 때만 '오늘로 돌아가기' 버튼 노출
+      const returnBanner = document.getElementById('returnToTodayBanner');
+      if (returnBanner) {
+        const todayKey = getTodayDateKey();
+        const isCurrentMonth = (currentCalendarYear === 2026 && currentCalendarMonth === 9);
+        const isTodaySelected = (selectedDateKey === todayKey);
+        if (!isCurrentMonth || !isTodaySelected) {
+          returnBanner.classList.remove('hidden');
+        } else {
+          returnBanner.classList.add('hidden');
+        }
+      }
+
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+
+      // JavaScript Date 객체 기반으로 시작 요일 및 전체 일수 정확히 계산
+      const firstDayOfWeek = new Date(currentCalendarYear, currentCalendarMonth - 1, 1).getDay();
+      const totalDays = new Date(currentCalendarYear, currentCalendarMonth, 0).getDate();
+      const todayKey = getTodayDateKey();
+
+      for (let i = 0; i < firstDayOfWeek; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = "h-14 bg-slate-50/50 rounded-xl";
+        grid.appendChild(emptyCell);
+      }
+
+      for (let day = 1; day <= totalDays; day++) {
+        const cell = document.createElement('div');
+        const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const item = calendarDaysMap[dateKey];
+
+        const dayOfWeekIndex = (firstDayOfWeek + day - 1) % 7;
+        const isSunday = (dayOfWeekIndex === 0);
+        const isSaturday = (dayOfWeekIndex === 6);
+        const isFirstDay = (day === 1);
+
+        const isSelected = (dateKey === selectedDateKey);
+        const isToday = (dateKey === todayKey);
+
+        // 첫날 월 라벨 강조
+        const dayLabelHtml = isFirstDay
+          ? `<span class="bg-indigo-600 text-white text-[9px] font-black px-1 rounded">${currentCalendarMonth}/1</span>`
+          : (isToday
+              ? `<span class="font-black text-[11px] ${isSelected ? 'text-rose-700' : 'text-rose-600'}">${day}</span>`
+              : `<span class="font-black text-[11px] ${isSelected ? 'text-white' : (isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800'))}">${day}</span>`);
+
+        if (item && item.isPrayerDay) {
+          const dayData = prayerData[item.dayNum] || {};
+          let coveredHours = 0;
+          let totalPrayers = 0;
+          for (let h = 0; h < 24; h++) {
+            const list = dayData[h.toString()] || [];
+            if (list.length > 0) {
+              coveredHours++;
+              totalPrayers += list.length;
+            }
+          }
+
+          if (isToday) {
+            cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative ${
+              isSelected
+                ? 'bg-rose-100/90 border-rose-400 ring-2 ring-rose-500 shadow-md z-10 text-slate-900'
+                : 'bg-rose-50/90 border-rose-200 hover:bg-rose-100 text-slate-800'
+            }`;
+          } else {
+            cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative ${
+              isSelected
+                ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300 ring-offset-1 z-10'
+                : 'bg-indigo-50/70 border-indigo-200/80 hover:bg-indigo-100/80 text-slate-800'
+            }`;
+          }
+
+          cell.onclick = () => selectDateKey(dateKey);
+
+          cell.innerHTML = `
+            <div class="flex items-center justify-between">
+              ${dayLabelHtml}
+              <span class="text-[9px] font-bold ${
+                isToday
+                  ? (isSelected ? 'text-rose-700' : 'text-rose-600')
+                  : (isSelected ? 'text-indigo-200' : 'text-indigo-600')
+              }">${item.dayNum}d</span>
+            </div>
+            <div class="text-center">
+              <div class="font-extrabold text-[11px] leading-tight truncate ${
+                isToday
+                  ? 'text-rose-950 font-black'
+                  : (isSelected ? 'text-white' : 'text-indigo-950')
+              }">
+                ${item.leader}
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[8px] ${
+              isToday
+                ? 'text-rose-600 font-semibold'
+                : (isSelected ? 'text-indigo-100' : 'text-slate-500')
+            } font-semibold">
+              <span>${coveredHours}/24h</span>
+              <span>${totalPrayers}명</span>
+            </div>
+          `;
+        } else if (item && !item.isPrayerDay) {
+          const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey];
+          
+          cell.className = `h-14 p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+            isSelected ? 'ring-2 ring-amber-400' : ''
+          } ${
+            isBlackout 
+              ? 'bg-amber-50 border-amber-200 text-amber-900' 
+              : 'bg-slate-100/80 border-slate-200 text-slate-400'
+          }`;
+
+          cell.onclick = () => selectDateKey(dateKey);
+
+          cell.innerHTML = `
+            <div class="flex items-center justify-between">
+              ${dayLabelHtml}
+              <span class="text-[8px] ${isBlackout ? 'text-amber-600 font-bold' : 'text-slate-400'}">쉼</span>
+            </div>
+            <div class="text-center">
+              <div class="text-[9px] font-bold truncate ${isBlackout ? 'text-amber-800' : 'text-slate-400'}">
+                ${item.reason || '쉼'}
+              </div>
+            </div>
+            <div class="text-[8px] text-center ${isBlackout ? 'text-amber-600 font-medium' : 'text-slate-300'}">
+              ${isBlackout ? '행사일' : '주일예배'}
+            </div>
+          `;
+        } else {
+          // 달력 범위 밖 일자
+          cell.className = "h-14 p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between";
+          cell.innerHTML = `<div>${dayLabelHtml}</div>`;
+        }
+
+        grid.appendChild(cell);
+      }
+    }
+
+    function changeMonth(delta) {
+      currentCalendarMonth += delta;
+      if (currentCalendarMonth > 12) {
+        currentCalendarMonth = 1;
+        currentCalendarYear++;
+      } else if (currentCalendarMonth < 1) {
+        currentCalendarMonth = 12;
+        currentCalendarYear--;
+      }
+      renderCalendar();
+    }
+
+    function setCalendarMonth(m) {
+      currentCalendarMonth = m;
+      renderCalendar();
+    }
+
+    // ========================================================
+    // 6. 가로 슬라이더 날짜 칩 렌더링
+    // ========================================================
+    function renderDateChips() {
+      const container = document.getElementById('dateScrollContainer');
+      container.innerHTML = '';
+
+      const todayKey = getTodayDateKey();
+
+      prayerDaysList.forEach((item) => {
+        const isSelected = (item.dateKey === selectedDateKey);
+        const isToday = (item.dateKey === todayKey);
+
+        const btn = document.createElement('button');
+        btn.id = `chip-${item.dateKey}`;
+        btn.onclick = () => selectDateKey(item.dateKey);
+
+        if (isToday) {
+          btn.className = `px-3.5 py-2.5 rounded-2xl shrink-0 flex flex-col items-center justify-center min-w-[76px] transition-all touch-bounce border ${
+            isSelected 
+              ? 'bg-rose-100 border-rose-400 ring-2 ring-rose-500 shadow-md text-slate-900' 
+              : 'bg-rose-50/90 border-rose-200 text-slate-800 hover:bg-rose-100'
+          }`;
+        } else {
+          btn.className = `px-3.5 py-2.5 rounded-2xl shrink-0 flex flex-col items-center justify-center min-w-[76px] transition-all touch-bounce border ${
+            isSelected 
+              ? 'bg-indigo-600 text-white border-indigo-700 shadow-md ring-2 ring-indigo-300' 
+              : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+          }`;
+        }
+
+        btn.innerHTML = `
+          <div class="flex items-center space-x-1">
+            <span class="text-[10px] font-bold ${
+              isToday 
+                ? (isSelected ? 'text-rose-700 font-black' : 'text-rose-600 font-bold') 
+                : (isSelected ? 'text-indigo-200' : 'text-slate-400')
+            }">${item.dayNum}일차</span>
+          </div>
+          <span class="text-xs font-black mt-0.5 ${
+            isToday 
+              ? 'text-rose-950' 
+              : (isSelected ? 'text-white' : 'text-slate-900')
+          }">${item.date.split(' ')[0]}</span>
+          <span class="text-[11px] font-bold mt-0.5 truncate max-w-[66px] ${
+            isToday 
+              ? 'text-rose-950 font-black' 
+              : (isSelected ? 'text-white' : 'text-indigo-950')
+          }">
+            ${item.leader}
+          </span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function selectDateKey(dateKey) {
+      selectedDateKey = dateKey;
+      const parts = dateKey.split('-');
+      currentCalendarYear = parseInt(parts[0], 10);
+      currentCalendarMonth = parseInt(parts[1], 10);
+
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+
+      const chip = document.getElementById(`chip-${dateKey}`);
+      if (chip) {
+        chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+    }
+
+    // ========================================================
+    // 7. 현재 선택된 날짜 요약 카드 렌더링
+    // ========================================================
+    function renderDaySummary() {
+      const item = calendarDaysMap[selectedDateKey];
+      const todayKey = getTodayDateKey();
+      const isToday = (selectedDateKey === todayKey);
+
+      const dayTag = document.getElementById('curDayTag');
+      const dateText = document.getElementById('curDateText');
+      const roundBadge = document.getElementById('curRoundBadge');
+      const todayTagBadge = document.getElementById('curTodayTagBadge');
+      const leaderText = document.getElementById('curLeaderText');
+      const leaderRoleBadge = document.getElementById('curLeaderRoleBadge');
+
+      const progressRatio = document.getElementById('curProgressRatio');
+      const slotCount = document.getElementById('curSlotCount');
+      const progressBar = document.getElementById('curProgressBar');
+      const emptySlotCount = document.getElementById('emptySlotCount');
+      const totalParticipantCount = document.getElementById('totalParticipantCount');
+
+      const statsTwoBox = document.getElementById('statsTwoBox');
+      const progressBarContainer = document.getElementById('progressBarContainer');
+      const summaryStatsRight = document.getElementById('summaryStatsRight');
+      const blackoutNoticeBox = document.getElementById('blackoutNoticeBox');
+      const timeFilterSection = document.getElementById('timeFilterSection');
+
+      if (todayTagBadge) {
+        if (isToday) {
+          todayTagBadge.classList.remove('hidden');
+        } else {
+          todayTagBadge.classList.add('hidden');
+        }
+      }
+
+      if (!item || !item.isPrayerDay) {
+        // 쉬는 날 (주일 또는 행사일)
+        const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey];
+        const reasonName = isBlackout ? schedulerConfig.blackoutDates[selectedDateKey] : '주일예배';
+
+        dayTag.innerText = "쉼 (릴레이 제외)";
+        dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900";
+        
+        const m = selectedDateKey.split('-')[1];
+        const d = selectedDateKey.split('-')[2];
+        dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 (${item ? item.date.split(' ')[1].replace(/[()]/g, '') : ''})`;
+        roundBadge.innerText = isBlackout ? "교회 행사" : "주일 쉼";
+
+        leaderText.innerText = reasonName;
+        leaderRoleBadge.className = "text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200";
+        leaderRoleBadge.innerText = isBlackout ? "행사로 기도일 건너뜀" : "주일 정기 예배";
+
+        statsTwoBox.classList.add('hidden');
+        progressBarContainer.classList.add('hidden');
+        summaryStatsRight.classList.add('hidden');
+        timeFilterSection.classList.add('hidden');
+
+        blackoutNoticeBox.classList.remove('hidden');
+        document.getElementById('blackoutNoticeTitle').innerText = `${reasonName} - 릴레이 기도 쉼`;
+        document.getElementById('blackoutNoticeDesc').innerText = isBlackout
+          ? `특별 행사 [${reasonName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 군단은 다음 기도일로 착착 밀렸습니다.`
+          : `주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.`;
+
+        return;
+      }
+
+      // 정상 기도일
+      statsTwoBox.classList.remove('hidden');
+      progressBarContainer.classList.remove('hidden');
+      summaryStatsRight.classList.remove('hidden');
+      blackoutNoticeBox.classList.add('hidden');
+      timeFilterSection.classList.remove('hidden');
+
+      dayTag.innerText = `${item.dayNum}일차`;
+      dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800";
+      
+      const m = item.dateKey.split('-')[1];
+      const d = item.dateKey.split('-')[2];
+      const yoil = item.date.split(' ')[1];
+      dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 ${yoil}`;
+
+      roundBadge.innerText = `${item.round}차 순환`;
+      leaderText.innerText = item.leader;
+
+      leaderRoleBadge.className = "text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded";
+      leaderRoleBadge.innerText = `${item.role || '군단리더'} 담당`;
+
+      // 통계 계산
+      const dayData = prayerData[item.dayNum] || {};
+      let coveredHours = 0;
+      let totalPrayers = 0;
+
+      for (let h = 0; h < 24; h++) {
+        const list = dayData[h.toString()] || [];
+        if (list.length > 0) {
+          coveredHours++;
+          totalPrayers += list.length;
+        }
+      }
+
+      const emptyCount = 24 - coveredHours;
+      const pct = Math.round((coveredHours / 24) * 100);
+
+      progressRatio.innerText = `${pct}%`;
+      slotCount.innerText = `${coveredHours} / 24 시간 커버`;
+      progressBar.style.width = `${pct}%`;
+      emptySlotCount.innerText = emptyCount;
+      totalParticipantCount.innerText = totalPrayers;
+    }
+
+    // ========================================================
+    // 8. 24시간 타임테이블 슬롯 렌더링
+    // ========================================================
+    function renderTimeSlots() {
+      const container = document.getElementById('timeSlotContainer');
+      container.innerHTML = '';
+
+      const item = calendarDaysMap[selectedDateKey];
+      if (!item || !item.isPrayerDay) {
+        container.innerHTML = `
+          <div class="bg-white rounded-2xl p-8 border border-slate-200 text-center text-slate-400 space-y-2">
+            <span class="text-4xl block">🕊️</span>
+            <p class="font-bold text-slate-700">이 날은 릴레이 기도가 쉬는 날입니다.</p>
+            <p class="text-xs text-slate-400">주일 공예배 또는 교회 행사로 인해 기도 신청을 받지 않습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const dayData = prayerData[item.dayNum] || {};
+
+      for (let h = 0; h < 24; h++) {
+        const hourStr = h.toString();
+        const list = dayData[hourStr] || [];
+        const isCovered = list.length > 0;
+
+        // 필터링 적용
+        if (currentTimeFilter === 'empty' && isCovered) continue;
+        if (currentTimeFilter === 'dawn' && (h < 0 || h >= 6)) continue;
+        if (currentTimeFilter === 'morning' && (h < 6 || h >= 12)) continue;
+        if (currentTimeFilter === 'afternoon' && (h < 12 || h >= 18)) continue;
+        if (currentTimeFilter === 'evening' && (h < 18 || h >= 24)) continue;
+
+        const timeLabel = `${String(h).padStart(2, '0')}:00 ~ ${String((h + 1) % 24).padStart(2, '0')}:00`;
+
+        let timeCategoryTag = '';
+        if (h >= 0 && h < 6) timeCategoryTag = '<span class="text-[10px] bg-purple-100 text-purple-800 font-semibold px-1.5 py-0.5 rounded">🌙 새벽</span>';
+        else if (h >= 6 && h < 12) timeCategoryTag = '<span class="text-[10px] bg-amber-100 text-amber-800 font-semibold px-1.5 py-0.5 rounded">☀️ 오전</span>';
+        else if (h >= 12 && h < 18) timeCategoryTag = '<span class="text-[10px] bg-sky-100 text-sky-800 font-semibold px-1.5 py-0.5 rounded">🌤️ 오후</span>';
+        else timeCategoryTag = '<span class="text-[10px] bg-indigo-100 text-indigo-800 font-semibold px-1.5 py-0.5 rounded">✨ 저녁</span>';
+
+        const card = document.createElement('div');
+        card.className = `p-3.5 rounded-2xl border transition-all ${
+          isCovered 
+            ? 'bg-white border-slate-200/90 shadow-xs' 
+            : 'bg-amber-50/40 border-dashed border-amber-300'
+        }`;
+
+        let participantsHtml = '';
+        if (isCovered) {
+          participantsHtml = `
+            <div class="mt-2 space-y-1.5">
+              ${list.map(p => `
+                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
+                  <div class="flex items-center space-x-2">
+                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[11px]">
+                      ${escapeHtml(p.name.charAt(0))}
+                    </span>
+                    <div>
+                      <div class="flex items-center space-x-1.5">
+                        <span class="font-bold text-slate-900">${escapeHtml(p.name)}</span>
+                        <span class="text-[10px] bg-slate-200/80 text-slate-700 px-1.5 py-0.2 rounded font-medium">${escapeHtml(p.cell)}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-slate-400 hover:text-rose-600 text-[11px] p-1 touch-bounce font-medium">
+                    취소
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          participantsHtml = `
+            <div class="mt-2 py-2 text-center text-xs text-amber-700 font-semibold bg-amber-50/70 rounded-xl border border-amber-200/50">
+              ⚠️ 신청자가 아직 없습니다.
+            </div>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+              <span class="font-black text-slate-900 text-sm tracking-tight">${timeLabel}</span>
+              ${timeCategoryTag}
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold ${isCovered ? 'text-indigo-600' : 'text-amber-600'}">
+                ${list.length > 0 ? `${list.length}명 참여 중` : '공백'}
+              </span>
+              <button onclick="openBookingModal(${h})" class="px-2.5 py-1 text-xs font-bold rounded-lg ${
+                isCovered 
+                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+              } touch-bounce transition flex items-center space-x-1">
+                <span>+ 참여</span>
+              </button>
+            </div>
+          </div>
+          ${participantsHtml}
+        `;
+
+        container.appendChild(card);
+      }
+    }
+
+    // ========================================================
+    // 9. 기도 신청 & 취소 로직
+    // ========================================================
+    let currentBookingHour = 0;
+
+    function openBookingModal(hour) {
+      const item = calendarDaysMap[selectedDateKey];
+      if (!item || !item.isPrayerDay) return;
+
+      currentBookingHour = hour;
+      const hourEnd = (hour + 1) % 24;
+
+      document.getElementById('modalDayBadge').innerText = `${item.dayNum}일차 (${item.date}) • ${item.leader} 리더`;
+      document.getElementById('modalHourTitle').innerText = `${String(hour).padStart(2, '0')}:00 ~ ${String(hourEnd).padStart(2, '0')}:00 기도 신청`;
+      
+      document.getElementById('inputName').value = '';
+      document.getElementById('inputCell').value = '';
+      document.getElementById('inputPin').value = '';
+
+      document.getElementById('bookingModal').classList.remove('hidden');
+    }
+
+    function closeBookingModal() {
+      document.getElementById('bookingModal').classList.add('hidden');
+    }
+
+    function submitBooking() {
+      const name = document.getElementById('inputName').value.trim();
+      const cell = document.getElementById('inputCell').value.trim();
+      const pin = document.getElementById('inputPin').value.trim();
+
+      if (!name) {
+        showToast('성함을 입력해주세요.', '⚠️');
+        return;
+      }
+      if (!cell) {
+        showToast('소속 셀을 입력해주세요.', '⚠️');
+        return;
+      }
+      if (!pin || pin.length < 4) {
+        showToast('비밀번호 4자리를 정확히 입력해주세요.', '⚠️');
+        return;
+      }
+
+      const item = calendarDaysMap[selectedDateKey];
+      if (!item || !item.isPrayerDay) return;
+
+      const dayNumStr = item.dayNum.toString();
+      const hourStr = currentBookingHour.toString();
+
+      if (!prayerData[dayNumStr]) prayerData[dayNumStr] = {};
+      if (!prayerData[dayNumStr][hourStr]) prayerData[dayNumStr][hourStr] = [];
+
+      const newBooking = {
+        id: 'p_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: name,
+        cell: cell,
+        pin: pin,
+        bookedAt: new Date().toISOString()
+      };
+
+      prayerData[dayNumStr][hourStr].push(newBooking);
+      savePrayerData();
+
+      // Supabase 클라우드 동기화
+      if (isCloudConnected && supabaseClient) {
+        supabaseClient.from('prayer_bookings').insert({
+          id: newBooking.id,
+          day_num: parseInt(dayNumStr, 10),
+          hour: parseInt(hourStr, 10),
+          name: newBooking.name,
+          cell: newBooking.cell,
+          pin: newBooking.pin,
+          booked_at: newBooking.bookedAt
+        }).then(({ error }) => {
+          if (error) console.error('Supabase insert error:', error);
+        });
+      }
+
+      closeBookingModal();
+      renderCalendar();
+      renderDaySummary();
+      renderTimeSlots();
+
+      showToast(`${name} 님의 기도가 등록되었습니다! 은혜 넘치는 시간 되세요. 🙏`, '✨');
+    }
+
+    function promptCancelBooking(dayNum, hour, bookingId, userName) {
+      pendingCancelTarget = { dayNum, hour, bookingId, userName };
+      document.getElementById('cancelTargetInfo').innerHTML = `신청자: <strong>${escapeHtml(userName)}</strong> 님`;
+      document.getElementById('inputCancelPin').value = '';
+
+      if (isAdminMode) {
+        document.getElementById('cancelPinSection').classList.add('hidden');
+      } else {
+        document.getElementById('cancelPinSection').classList.remove('hidden');
+      }
+
+      document.getElementById('cancelModal').classList.remove('hidden');
+    }
+
+    function closeCancelModal() {
+      document.getElementById('cancelModal').classList.add('hidden');
+      pendingCancelTarget = null;
+    }
+
+    function confirmCancelBooking() {
+      if (!pendingCancelTarget) return;
+
+      const { dayNum, hour, bookingId } = pendingCancelTarget;
+      const list = (prayerData[dayNum] && prayerData[dayNum][hour]) || [];
+      const target = list.find(b => b.id === bookingId);
+
+      if (!target) {
+        showToast('신청 내역을 찾을 수 없습니다.', '⚠️');
+        closeCancelModal();
+        return;
+      }
+
+      if (!isAdminMode) {
+        const pin = document.getElementById('inputCancelPin').value.trim();
+        if (pin !== target.pin) {
+          showToast('비밀번호가 일치하지 않습니다.', '❌');
+          return;
+        }
+      }
+
+      prayerData[dayNum][hour] = list.filter(b => b.id !== bookingId);
+      savePrayerData();
+
+      // Supabase 클라우드 동기화
+      if (isCloudConnected && supabaseClient) {
+        supabaseClient.from('prayer_bookings').delete().eq('id', bookingId).then(({ error }) => {
+          if (error) console.error('Supabase delete error:', error);
+        });
+      }
+
+      closeCancelModal();
+      renderCalendar();
+      renderDaySummary();
+      renderTimeSlots();
+
+      showToast('기도 신청이 정상 취소되었습니다.', '🗑️');
+    }
+
+    // ========================================================
+    // 10. 카카오톡 단톡방 공유 양식 생성
+    // ========================================================
+    function copyKakaoShareText() {
+      const item = calendarDaysMap[selectedDateKey];
+      if (!item || !item.isPrayerDay) {
+        showToast('쉬는 날은 공유 양식을 생성하지 않습니다.', 'ℹ️');
+        return;
+      }
+
+      const dayData = prayerData[item.dayNum] || {};
+      let coveredHours = 0;
+      let totalPrayers = 0;
+      let emptyList = [];
+      let fullSchedule = [];
+
+      for (let h = 0; h < 24; h++) {
+        const hourLabel = `${String(h).padStart(2, '0')}:00 ~ ${String((h + 1) % 24).padStart(2, '0')}:00`;
+        const list = dayData[h.toString()] || [];
+
+        if (list.length > 0) {
+          coveredHours++;
+          totalPrayers += list.length;
+          const names = list.map(p => `${p.name}(${p.cell})`).join(', ');
+          fullSchedule.push(`• ${hourLabel}: ✅ ${names}`);
+        } else {
+          emptyList.push(hourLabel);
+          fullSchedule.push(`• ${hourLabel}: ⚠️ [공백 - 신청 대기]`);
+        }
+      }
+
+      const pct = Math.round((coveredHours / 24) * 100);
+      let text = `[🔥 뉴사운드교회 성전 릴레이기도 현황]\n`;
+      text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
+      text += `👤 담당: ${item.leader} ${item.role || '군단리더'} (${item.round}차 순환)\n`;
+      text += `📊 24시간 커버: ${coveredHours}/24시간 (${pct}% 달성)\n`;
+      text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
+
+      if (emptyList.length > 0) {
+        text += `⚠️ [공백 시간대 (기도 참여자 모집): ${emptyList.length}곳]\n`;
+        text += emptyList.slice(0, 8).map(t => ` 👉 ${t}`).join('\n');
+        if (emptyList.length > 8) {
+          text += `\n (외 ${emptyList.length - 8}개 시간대 대기 중)`;
+        }
+        text += `\n *같은 시간대에도 여러 명이 함께 참여하실 수 있습니다!*\n\n`;
+      } else {
+        text += `🎉 24시간 연속 기도가 빈틈없이 모두 채워졌습니다! 할렐루야!\n\n`;
+      }
+
+      text += `📋 [24시간 타임테이블]\n`;
+      text += fullSchedule.join('\n');
+      text += `\n\n성전을 기도로 지켜주시는 모든 분들을 축복합니다! 🙏`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('카톡 공지 양식이 복사되었습니다! 단톡방에 붙여넣기 하세요.', '📋');
+      }).catch(err => {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        showToast('카톡 공지 양식이 복사되었습니다! 단톡방에 붙여넣기 하세요.', '📋');
+      });
+    }
+
+    // ========================================================
+    // 11. ⚡ 교회 행사 기간 등록 & 순번 관리 (교역자/간사)
+    // ========================================================
+    function openShiftManagerModal() {
+      renderBlackoutList();
+      renderLeaderQueueUI();
+
+      document.getElementById('inputEventStartDate').value = selectedDateKey;
+      document.getElementById('inputEventEndDate').value = '';
+      document.getElementById('inputEventReason').value = '';
+
+      const sundayCb = document.getElementById('cfgExcludeSunday');
+      const fridayCb = document.getElementById('cfgExcludeFriday');
+      if (sundayCb) sundayCb.checked = !!schedulerConfig.excludeSunday;
+      if (fridayCb) fridayCb.checked = !!schedulerConfig.excludeFriday;
+
+      document.getElementById('shiftManagerModal').classList.remove('hidden');
+    }
+
+    function closeShiftManagerModal() {
+      document.getElementById('shiftManagerModal').classList.add('hidden');
+    }
+
+    // 행사 기간 등록 로직 (시작일 ~ 종료일 지원)
+    function addBlackoutDate() {
+      const startVal = document.getElementById('inputEventStartDate').value;
+      const endVal = document.getElementById('inputEventEndDate').value;
+      const reasonVal = document.getElementById('inputEventReason').value.trim() || '교회 특별 행사';
+
+      if (!startVal) {
+        showToast('행사 시작 날짜를 선택해주세요.', '⚠️');
+        return;
+      }
+
+      if (!schedulerConfig.blackoutDates) {
+        schedulerConfig.blackoutDates = {};
+      }
+
+      const startDate = new Date(startVal + 'T00:00:00');
+      let endDate = endVal ? new Date(endVal + 'T00:00:00') : new Date(startVal + 'T00:00:00');
+
+      if (endDate < startDate) {
+        endDate = new Date(startVal + 'T00:00:00');
+      }
+
+      let addedCount = 0;
+      const cur = new Date(startDate);
+      while (cur <= endDate) {
+        const y = cur.getFullYear();
+        const m = String(cur.getMonth() + 1).padStart(2, '0');
+        const d = String(cur.getDate()).padStart(2, '0');
+        const dateKey = `${y}-${m}-${d}`;
+
+        schedulerConfig.blackoutDates[dateKey] = reasonVal;
+        addedCount++;
+
+        cur.setDate(cur.getDate() + 1);
+      }
+
+      saveConfigData();
+      generateDynamicSchedule();
+      renderBlackoutList();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+
+      document.getElementById('inputEventReason').value = '';
+      document.getElementById('inputEventEndDate').value = '';
+
+      if (addedCount === 1) {
+        showToast(`${startVal} [${reasonVal}] 등록 완료! 이후 일정이 1일 연기되었습니다.`, '⚡');
+      } else {
+        showToast(`${startVal} ~ ${endVal || startVal} (${addedCount}일간) [${reasonVal}] 등록 완료! 이후 일정이 ${addedCount}일 연쇄 연기되었습니다.`, '⚡');
+      }
+    }
+
+    function removeBlackoutDate(dateKey) {
+      if (confirm(`${dateKey} 행사를 해제하고 일정을 다시 원복하시겠습니까?`)) {
+        delete schedulerConfig.blackoutDates[dateKey];
+        saveConfigData();
+
+        generateDynamicSchedule();
+        renderBlackoutList();
+        renderCalendar();
+        renderDateChips();
+        renderDaySummary();
+        renderTimeSlots();
+
+        showToast(`${dateKey} 행사가 해제되어 일정이 정상 복원되었습니다.`, '🔄');
+      }
+    }
+
+    function renderBlackoutList() {
+      const container = document.getElementById('blackoutListContainer');
+      const countBadge = document.getElementById('blackoutCountBadge');
+      container.innerHTML = '';
+
+      const keys = Object.keys(schedulerConfig.blackoutDates || {}).sort();
+      if (countBadge) countBadge.innerText = `총 ${keys.length}일 등록됨`;
+
+      if (keys.length === 0) {
+        container.innerHTML = `<p class="text-slate-400 text-center py-2 text-[11px]">등록된 특별 행사일이 없습니다. (주일은 기본 제외됨)</p>`;
+        return;
+      }
+
+      keys.forEach(dateKey => {
+        const reason = schedulerConfig.blackoutDates[dateKey];
+        const row = document.createElement('div');
+        row.className = "flex items-center justify-between p-2 bg-amber-50/70 border border-amber-200 rounded-lg text-xs";
+        row.innerHTML = `
+          <div class="flex items-center space-x-2 truncate">
+            <span class="font-bold text-amber-900">${dateKey}</span>
+            <span class="text-slate-400">|</span>
+            <span class="font-semibold text-slate-800 truncate">${escapeHtml(reason)}</span>
+            <span class="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded font-bold shrink-0">연기됨</span>
+          </div>
+          <button onclick="removeBlackoutDate('${dateKey}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs p-1 shrink-0 ml-1">
+            해제 ✕
+          </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // ========================================================
+    // 12. 릴레이 기도 순번 (리더 큐) 동적 관리 (추가/삭제/이동)
+    // ========================================================
+    function renderLeaderQueueUI() {
+      const container = document.getElementById('leaderQueueList');
+      const statusText = document.getElementById('queueStatusText');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const q = schedulerConfig.leaderQueue;
+      if (statusText) {
+        statusText.innerText = `총 ${q.length}개 순번 (김은진 3회, 김태홍 2회, 유정심 리더 포함)`;
+      }
+
+      q.forEach((item, idx) => {
+        const name = typeof item === 'object' && item !== null ? item.name : item;
+        const role = typeof item === 'object' && item !== null && item.role ? item.role : '군단리더';
+        const note = typeof item === 'object' && item !== null && item.note ? item.note : '';
+
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-1.5 rounded-lg border text-xs bg-white border-slate-200';
+
+        row.innerHTML = `
+          <div class="flex items-center space-x-1.5 truncate">
+            <span class="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-600 shrink-0">
+              ${idx + 1}
+            </span>
+            <span class="font-bold text-slate-900 truncate">${escapeHtml(name)}</span>
+            <span class="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-indigo-50 text-indigo-700">${role}${note ? ` (${note})` : ''}</span>
+          </div>
+          <div class="flex items-center space-x-1 shrink-0">
+            <button onclick="moveQueueItem(${idx}, -1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 font-bold flex items-center justify-center disabled:opacity-30" ${idx === 0 ? 'disabled' : ''} title="위로 이동">
+              ▲
+            </button>
+            <button onclick="moveQueueItem(${idx}, 1)" class="w-6 h-6 rounded bg-slate-100 hover:bg-indigo-100 text-slate-600 hover:text-indigo-700 font-bold flex items-center justify-center disabled:opacity-30" ${idx === q.length - 1 ? 'disabled' : ''} title="아래로 이동">
+              ▼
+            </button>
+            <button onclick="deleteQueueItem(${idx})" class="w-6 h-6 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold flex items-center justify-center" title="순번 제외">
+              ✕
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function addLeaderToQueue() {
+      const nameInput = document.getElementById('newLeaderName');
+      const roleInput = document.getElementById('newLeaderRole');
+      const name = nameInput.value.trim();
+      const role = roleInput.value;
+
+      if (!name) {
+        showToast('성함을 입력해주세요.', '⚠️');
+        return;
+      }
+
+      schedulerConfig.leaderQueue.push({
+        name: name,
+        role: role,
+        note: ''
+      });
+
+      saveConfigData();
+      generateDynamicSchedule();
+      renderLeaderQueueUI();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+
+      nameInput.value = '';
+      showToast(`${name} (${role}) 님이 순번 #${schedulerConfig.leaderQueue.length}번에 추가되었습니다!`, '➕');
+    }
+
+    function moveQueueItem(idx, dir) {
+      const targetIdx = idx + dir;
+      if (targetIdx < 0 || targetIdx >= schedulerConfig.leaderQueue.length) return;
+
+      const temp = schedulerConfig.leaderQueue[idx];
+      schedulerConfig.leaderQueue[idx] = schedulerConfig.leaderQueue[targetIdx];
+      schedulerConfig.leaderQueue[targetIdx] = temp;
+
+      saveConfigData();
+      generateDynamicSchedule();
+      renderLeaderQueueUI();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+    }
+
+    function deleteQueueItem(idx) {
+      const item = schedulerConfig.leaderQueue[idx];
+      const name = typeof item === 'object' ? item.name : item;
+      if (confirm(`순번 #${idx + 1} [${name}] 리더를 순환 큐에서 제외하시겠습니까?`)) {
+        schedulerConfig.leaderQueue.splice(idx, 1);
+        saveConfigData();
+        generateDynamicSchedule();
+        renderLeaderQueueUI();
+        renderCalendar();
+        renderDateChips();
+        renderDaySummary();
+        renderTimeSlots();
+        showToast('순번에서 제외되었습니다.', '🗑️');
+      }
+    }
+
+    function resetLeaderQueueToDefault() {
+      if (confirm('6차 릴레이 기본 25순번(김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함)으로 초기화하시겠습니까?')) {
+        schedulerConfig.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE));
+        saveConfigData();
+        generateDynamicSchedule();
+        renderLeaderQueueUI();
+        renderCalendar();
+        renderDateChips();
+        renderDaySummary();
+        renderTimeSlots();
+        showToast('기본 25순번으로 초기화되었습니다.', '🔄');
+      }
+    }
+
+    function toggleDayExclusion(dayType, isChecked) {
+      if (dayType === 'sunday') {
+        schedulerConfig.excludeSunday = isChecked;
+      } else if (dayType === 'friday') {
+        schedulerConfig.excludeFriday = isChecked;
+      }
+      saveConfigData();
+      generateDynamicSchedule();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+
+      const ruleBadge = document.getElementById('ruleBadge');
+      if (ruleBadge) {
+        if (schedulerConfig.excludeSunday && schedulerConfig.excludeFriday) {
+          ruleBadge.innerText = "금·주일 쉼 자동순환";
+        } else if (schedulerConfig.excludeSunday) {
+          ruleBadge.innerText = "주일 쉼 자동순환";
+        } else if (schedulerConfig.excludeFriday) {
+          ruleBadge.innerText = "금요일 쉼 자동순환";
+        } else {
+          ruleBadge.innerText = "매일 연속 순환";
+        }
+      }
+
+      showToast(`요일 쉼 설정이 변경되었습니다.`, '⚙️');
+    }
+
+    // ========================================================
+    // 13. 관리자 모드 & 검색 & 통계 모달
+    // ========================================================
+    function toggleAdminMode() {
+      if (isAdminMode) {
+        exitAdminMode();
+      } else {
+        const pin = prompt('교역자/간사 관리자 비밀번호 4자리를 입력해주세요 (기본: 7777):');
+        if (pin === '7777') {
+          isAdminMode = true;
+          document.getElementById('adminBanner').classList.remove('hidden');
+          document.getElementById('adminBadgeText').innerText = '관리자 활성';
+          document.getElementById('adminModeBtn').className = "px-2 py-1 text-[11px] font-extrabold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition touch-bounce whitespace-nowrap";
+          renderTimeSlots();
+          showToast('교역자/간사 관리자 모드로 전환되었습니다.', '🛡️');
+        } else if (pin !== null) {
+          alert('비밀번호가 올바르지 않습니다.');
+        }
+      }
+    }
+
+    function exitAdminMode() {
+      isAdminMode = false;
+      document.getElementById('adminBanner').classList.add('hidden');
+      document.getElementById('adminBadgeText').innerText = '성도 모드';
+      document.getElementById('adminModeBtn').className = "px-2 py-1 text-[11px] font-extrabold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition touch-bounce whitespace-nowrap";
+      renderTimeSlots();
+      showToast('성도 모드로 복귀했습니다.', '👤');
+    }
+
+    function openSearchModal() {
+      document.getElementById('searchModal').classList.remove('hidden');
+      document.getElementById('searchNameInput').focus();
+    }
+
+    function closeSearchModal() {
+      document.getElementById('searchModal').classList.add('hidden');
+    }
+
+    function doSearchName() {
+      const query = document.getElementById('searchNameInput').value.trim();
+      const resultsContainer = document.getElementById('searchResults');
+      if (!query) {
+        resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-4">성함을 입력해주세요.</p>`;
+        return;
+      }
+
+      let matches = [];
+
+      // 1. 군단리더/리더 담당 날짜 검색
+      prayerDaysList.forEach(item => {
+        if (item.leader.includes(query)) {
+          matches.push({
+            type: 'leader',
+            dayNum: item.dayNum,
+            date: item.date,
+            dateKey: item.dateKey,
+            leader: item.leader,
+            role: item.role || (item.leader === '유정심' ? '리더' : '군단리더'),
+            round: item.round
+          });
+        }
+      });
+
+      // 2. 시간대별 신청자 검색
+      Object.keys(prayerData).forEach(dayNum => {
+        const hoursObj = prayerData[dayNum];
+        Object.keys(hoursObj).forEach(h => {
+          const list = hoursObj[h] || [];
+          list.forEach(p => {
+            if (p.name.includes(query)) {
+              const dayItem = prayerDaysList.find(d => d.dayNum.toString() === dayNum);
+              matches.push({
+                type: 'participant',
+                dayNum: dayNum,
+                date: dayItem ? dayItem.date : `${dayNum}일차`,
+                dateKey: dayItem ? dayItem.dateKey : selectedDateKey,
+                hour: h,
+                name: p.name,
+                cell: p.cell
+              });
+            }
+          });
+        });
+      });
+
+      if (matches.length === 0) {
+        resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-6">[${escapeHtml(query)}] 님의 기도 일정을 찾을 수 없습니다.</p>`;
+        return;
+      }
+
+      resultsContainer.innerHTML = matches.map(m => {
+        if (m.type === 'leader') {
+          return `
+            <div onclick="selectDateFromSearch('${m.dateKey}')" class="p-3 bg-indigo-50/70 border border-indigo-200 rounded-xl cursor-pointer hover:bg-indigo-100 transition">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-xs font-black text-indigo-700">${m.dayNum}일차</span>
+                  <span class="text-xs font-bold text-slate-800">${m.date}</span>
+                </div>
+                <span class="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">군단리더 담당</span>
+              </div>
+              <p class="text-xs font-bold text-indigo-950 mt-1">👤 ${m.leader} (${m.round}차 순환)</p>
+            </div>
+          `;
+        } else {
+          const timeText = `${String(m.hour).padStart(2, '0')}:00 ~ ${String((parseInt(m.hour, 10) + 1) % 24).padStart(2, '0')}:00`;
+          return `
+            <div onclick="selectDateFromSearch('${m.dateKey}')" class="p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">${m.dayNum}일차 (${m.date})</span>
+                <span class="text-xs font-black text-indigo-600">${timeText}</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-1">참여자: <strong>${escapeHtml(m.name)}</strong> (${escapeHtml(m.cell)})</p>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function selectDateFromSearch(dateKey) {
+      closeSearchModal();
+      selectDateKey(dateKey);
+    }
+
+    function openSummaryModal() {
+      const container = document.getElementById('summaryList');
+      container.innerHTML = '';
+
+      prayerDaysList.slice(0, 30).forEach(item => {
+        const dayData = prayerData[item.dayNum] || {};
+        let covered = 0;
+        let total = 0;
+        for (let h = 0; h < 24; h++) {
+          const list = dayData[h.toString()] || [];
+          if (list.length > 0) {
+            covered++;
+            total += list.length;
+          }
+        }
+        const pct = Math.round((covered / 24) * 100);
+
+        const card = document.createElement('div');
+        card.onclick = () => {
+          closeSummaryModal();
+          selectDateKey(item.dateKey);
+        };
+        card.className = "p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition";
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center space-x-1.5">
+              <span class="font-black text-indigo-700">${item.dayNum}일차</span>
+              <span class="font-bold text-slate-800">${item.date}</span>
+              <span class="text-[10px] text-slate-500">${item.leader}</span>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-0.5">${covered}/24시간 커버 • ${total}명 참여</div>
+          </div>
+          <div class="text-right">
+            <span class="text-sm font-black ${covered === 24 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('summaryModal').classList.remove('hidden');
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('summaryModal').classList.add('hidden');
+    }
+
+    // ========================================================
+    // 14. 뷰 전환 & 필터 & 유틸
+    // ========================================================
+    function setViewMode(mode) {
+      currentViewMode = mode;
+      const calView = document.getElementById('calendarViewContainer');
+      const sliderView = document.getElementById('sliderViewContainer');
+      const btnCal = document.getElementById('viewBtnCalendar');
+      const btnSlider = document.getElementById('viewBtnSlider');
+
+      if (mode === 'calendar') {
+        calView.classList.remove('hidden');
+        sliderView.classList.add('hidden');
+        btnCal.className = "px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition";
+        btnSlider.className = "px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 transition";
+      } else {
+        calView.classList.add('hidden');
+        sliderView.classList.remove('hidden');
+        btnSlider.className = "px-2.5 py-1 rounded-lg bg-white text-indigo-700 shadow-xs transition";
+        btnCal.className = "px-2.5 py-1 rounded-lg text-slate-500 hover:text-slate-800 transition";
+
+        const chip = document.getElementById(`chip-${selectedDateKey}`);
+        if (chip) {
+          chip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+        }
+      }
+    }
+
+    function setTimeFilter(filter) {
+      currentTimeFilter = filter;
+      ['all', 'dawn', 'morning', 'afternoon', 'evening', 'empty'].forEach(f => {
+        const btn = document.getElementById(`filter-${f}`);
+        if (btn) {
+          if (f === filter) {
+            btn.className = "px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition shadow-xs";
+          } else {
+            btn.className = "px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 shrink-0 transition";
+          }
+        }
+      });
+      renderTimeSlots();
+    }
+
+    function showToast(msg, icon = '✅') {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toastMsg');
+      const toastIcon = document.getElementById('toastIcon');
+
+      toastMsg.innerText = msg;
+      toastIcon.innerText = icon;
+
+      toast.classList.remove('opacity-0', 'pointer-events-none');
+      toast.classList.add('opacity-100');
+
+      clearTimeout(window._toastTimer);
+      window._toastTimer = setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none');
+        toast.classList.remove('opacity-100');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // ========================================================
+    // 15. Supabase 클라우드 실시간 DB 연동 모듈
+    // ========================================================
+    function updateCloudStatusUI(status, msg) {
+      const dot = document.getElementById('cloudStatusDot');
+      const text = document.getElementById('cloudStatusText');
+      const btnText = document.getElementById('cloudStatusBtnText');
+      const modalBadge = document.getElementById('modalCloudStatusBadge');
+      if (!dot || !text) return;
+
+      if (status === 'connected') {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0";
+        text.innerText = msg || "실시간 클라우드 동기화 중 (Supabase)";
+        if (btnText) btnText.innerText = "연동 설정";
+        if (modalBadge) {
+          modalBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800";
+          modalBadge.innerText = "🟢 정상 연결됨";
+        }
+      } else if (status === 'connecting') {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping shrink-0";
+        text.innerText = msg || "클라우드 연결 중...";
+        if (btnText) btnText.innerText = "연결 확인";
+        if (modalBadge) {
+          modalBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800";
+          modalBadge.innerText = "🟡 연결 중...";
+        }
+      } else {
+        dot.className = "w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0";
+        text.innerText = msg || "로컬 모드 (브라우저 저장)";
+        if (btnText) btnText.innerText = "클라우드 연동";
+        if (modalBadge) {
+          modalBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-100 text-slate-600";
+          modalBadge.innerText = "⚪ 미연결 (로컬)";
+        }
+      }
+    }
+
+    function getSavedSupabaseConfig() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
+        return saved ? JSON.parse(saved) : null;
+      } catch(e) { return null; }
+    }
+
+    async function initSupabase(isManual = false) {
+      const config = getSavedSupabaseConfig();
+      if (!config || !config.url || !config.anonKey) {
+        updateCloudStatusUI('disconnected', '로컬 모드 (브라우저 저장)');
+        return false;
+      }
+
+      if (typeof window.supabase === 'undefined' || !window.supabase.createClient) {
+        updateCloudStatusUI('disconnected', 'Supabase SDK 로드 대기 중');
+        return false;
+      }
+
+      try {
+        updateCloudStatusUI('connecting', '클라우드 DB 연결 중...');
+        supabaseClient = window.supabase.createClient(config.url.trim(), config.anonKey.trim());
+
+        const ok = await fetchCloudData();
+        if (ok) {
+          isCloudConnected = true;
+          updateCloudStatusUI('connected', '실시간 클라우드 동기화 중 (Supabase)');
+          setupSupabaseRealtime();
+          if (isManual) showToast('클라우드 DB에 정상 연결되었습니다! 실시간 동기화 활성', '☁️');
+          return true;
+        } else {
+          isCloudConnected = false;
+          updateCloudStatusUI('disconnected', '연결 실패 (설정 또는 스키마 확인 필요)');
+          if (isManual) alert('Supabase 연결에 실패했습니다.\n1. Project URL과 anon key가 올바른지 확인해주세요.\n2. Supabase SQL Editor에서 supabase_schema.sql을 실행했는지 확인해주세요.');
+          return false;
+        }
+      } catch (err) {
+        console.error('Supabase init error:', err);
+        isCloudConnected = false;
+        updateCloudStatusUI('disconnected', '연결 오류 발생');
+        if (isManual) alert('연결 오류: ' + err.message);
+        return false;
+      }
+    }
+
+    async function fetchCloudData() {
+      if (!supabaseClient) return false;
+      try {
+        // 1. 기도 신청 목록 조회
+        const { data: bookings, error: bError } = await supabaseClient
+          .from('prayer_bookings')
+          .select('*');
+
+        if (bError) {
+          console.warn('prayer_bookings fetch error:', bError);
+          return false;
+        }
+
+        if (bookings) {
+          const newPrayerData = {};
+          bookings.forEach(b => {
+            const dStr = b.day_num.toString();
+            const hStr = b.hour.toString();
+            if (!newPrayerData[dStr]) newPrayerData[dStr] = {};
+            if (!newPrayerData[dStr][hStr]) newPrayerData[dStr][hStr] = [];
+            newPrayerData[dStr][hStr].push({
+              id: b.id,
+              name: b.name,
+              cell: b.cell,
+              pin: b.pin,
+              bookedAt: b.booked_at
+            });
+          });
+          prayerData = newPrayerData;
+          localStorage.setItem(STORAGE_KEY_PRAYER, JSON.stringify(prayerData));
+        }
+
+        // 2. 관리자 스케줄 설정 조회
+        const { data: configRows, error: cError } = await supabaseClient
+          .from('relay_config')
+          .select('config_data')
+          .eq('id', 'main_config')
+          .maybeSingle();
+
+        if (configRows && configRows.config_data) {
+          schedulerConfig = configRows.config_data;
+          localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
+          generateDynamicSchedule();
+        }
+
+        renderCalendar();
+        renderDateChips();
+        renderDaySummary();
+        renderTimeSlots();
+        return true;
+      } catch (err) {
+        console.error('fetchCloudData error:', err);
+        return false;
+      }
+    }
+
+    function setupSupabaseRealtime() {
+      if (!supabaseClient) return;
+      if (supabaseRealtimeChannel) {
+        supabaseClient.removeChannel(supabaseRealtimeChannel);
+      }
+
+      supabaseRealtimeChannel = supabaseClient
+        .channel('newsound_relay_realtime')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_bookings' }, (payload) => {
+          const { eventType, new: newRec, old: oldRec } = payload;
+          if (eventType === 'INSERT') {
+            const dStr = newRec.day_num.toString();
+            const hStr = newRec.hour.toString();
+            if (!prayerData[dStr]) prayerData[dStr] = {};
+            if (!prayerData[dStr][hStr]) prayerData[dStr][hStr] = [];
+            if (!prayerData[dStr][hStr].some(b => b.id === newRec.id)) {
+              prayerData[dStr][hStr].push({
+                id: newRec.id,
+                name: newRec.name,
+                cell: newRec.cell,
+                pin: newRec.pin,
+                bookedAt: newRec.booked_at
+              });
+              localStorage.setItem(STORAGE_KEY_PRAYER, JSON.stringify(prayerData));
+              renderCalendar();
+              renderDaySummary();
+              renderTimeSlots();
+            }
+          } else if (eventType === 'DELETE') {
+            const targetId = oldRec.id;
+            let modified = false;
+            Object.keys(prayerData).forEach(d => {
+              Object.keys(prayerData[d]).forEach(h => {
+                const prevCount = prayerData[d][h].length;
+                prayerData[d][h] = prayerData[d][h].filter(b => b.id !== targetId);
+                if (prayerData[d][h].length !== prevCount) modified = true;
+              });
+            });
+            if (modified) {
+              localStorage.setItem(STORAGE_KEY_PRAYER, JSON.stringify(prayerData));
+              renderCalendar();
+              renderDaySummary();
+              renderTimeSlots();
+            }
+          }
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'relay_config' }, (payload) => {
+          if (payload.new && payload.new.config_data) {
+            schedulerConfig = payload.new.config_data;
+            localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
+            generateDynamicSchedule();
+            renderCalendar();
+            renderDateChips();
+            renderDaySummary();
+            renderTimeSlots();
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log('Supabase Realtime 연결 완료');
+          }
+        });
+    }
+
+    function openSupabaseModal() {
+      const cfg = getSavedSupabaseConfig() || {};
+      document.getElementById('inputSupabaseUrl').value = cfg.url || '';
+      document.getElementById('inputSupabaseKey').value = cfg.anonKey || '';
+      document.getElementById('supabaseModal').classList.remove('hidden');
+    }
+
+    function closeSupabaseModal() {
+      document.getElementById('supabaseModal').classList.add('hidden');
+    }
+
+    async function saveSupabaseConfig() {
+      const url = document.getElementById('inputSupabaseUrl').value.trim();
+      const anonKey = document.getElementById('inputSupabaseKey').value.trim();
+
+      if (!url || !anonKey) {
+        alert('Supabase Project URL과 anon public key를 모두 입력해주세요.');
+        return;
+      }
+
+      const config = { url, anonKey };
+      localStorage.setItem(STORAGE_KEY_SUPABASE, JSON.stringify(config));
+      const success = await initSupabase(true);
+      if (success) {
+        closeSupabaseModal();
+      }
+    }
+
+    async function uploadLocalDataToCloud() {
+      if (!isCloudConnected || !supabaseClient) {
+        alert('먼저 상단의 [연결 테스트 및 실시간 동기화 시작]을 완료해주세요.');
+        return;
+      }
+
+      if (!confirm('현재 브라우저에 저장된 모든 기도 신청 내역과 설정을 Supabase 클라우드로 일괄 업로드하시겠습니까?')) {
+        return;
+      }
+
+      try {
+        const bookingsToInsert = [];
+        Object.keys(prayerData).forEach(dayNumStr => {
+          const hoursObj = prayerData[dayNumStr];
+          Object.keys(hoursObj).forEach(hourStr => {
+            (hoursObj[hourStr] || []).forEach(b => {
+              bookingsToInsert.push({
+                id: b.id,
+                day_num: parseInt(dayNumStr, 10),
+                hour: parseInt(hourStr, 10),
+                name: b.name,
+                cell: b.cell,
+                pin: b.pin,
+                booked_at: b.bookedAt || new Date().toISOString()
+              });
+            });
+          });
+        });
+
+        if (bookingsToInsert.length > 0) {
+          const { error: bErr } = await supabaseClient
+            .from('prayer_bookings')
+            .upsert(bookingsToInsert, { onConflict: 'id' });
+          if (bErr) throw bErr;
+        }
+
+        const { error: cErr } = await supabaseClient
+          .from('relay_config')
+          .upsert({
+            id: 'main_config',
+            config_data: schedulerConfig,
+            updated_at: new Date().toISOString()
+          });
+        if (cErr) throw cErr;
+
+        showToast(`총 ${bookingsToInsert.length}건의 기도 신청과 설정이 클라우드에 업로드되었습니다!`, '🚀');
+        fetchCloudData();
+      } catch (err) {
+        console.error('Upload to cloud error:', err);
+        alert('업로드 중 오류가 발생했습니다: ' + err.message);
+      }
+    }
+
+    function disconnectSupabase() {
+      if (confirm('Supabase 클라우드 연동을 해제하고 로컬 모드로 전환하시겠습니까?')) {
+        localStorage.removeItem(STORAGE_KEY_SUPABASE);
+        if (supabaseRealtimeChannel && supabaseClient) {
+          supabaseClient.removeChannel(supabaseRealtimeChannel);
+        }
+        supabaseClient = null;
+        isCloudConnected = false;
+        updateCloudStatusUI('disconnected', '로컬 모드 (브라우저 저장)');
+        closeSupabaseModal();
+        showToast('로컬 저장 모드로 전환되었습니다.', '💾');
+      }
+    }
+
+    // ========================================================
+    // 16. 초기화 실행
+    // ========================================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      initData();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+      // Supabase 클라우드 동기화 시도 (설정되어 있을 경우)
+      await initSupabase(false);
+    });
+  </script>
+</body>
+</html>
