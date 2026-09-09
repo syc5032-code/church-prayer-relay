@@ -51,8 +51,8 @@
   <!-- 메인 컨테이너 (모바일 최적화 max-w-md) -->
   <main class="max-w-md mx-auto px-4 pt-3 space-y-3">
 
-    <!-- 클라우드 실시간 동기화 상태 바 -->
-    <div id="cloudStatusBar" class="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-slate-200/90 shadow-2xs text-[11px]">
+    <!-- 클라우드 실시간 동기화 상태 바 (일반 화면 미노출) -->
+    <div id="cloudStatusBar" class="hidden">
       <div class="flex items-center space-x-2 truncate mr-2">
         <span id="cloudStatusDot" class="w-2.5 h-2.5 rounded-full bg-slate-400 shrink-0"></span>
         <span id="cloudStatusText" class="font-bold text-slate-700 truncate">로컬 모드 (브라우저 저장)</span>
@@ -87,9 +87,7 @@
       <div class="flex items-center justify-between">
         <div class="flex items-center space-x-1.5">
           <span class="text-xs font-bold text-slate-800">📅 릴레이 일정 캘린더</span>
-          <span id="ruleBadge" class="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-2 py-0.5 rounded-full border border-emerald-200/60">
-            주일 쉼 자동순환
-          </span>
+          <span id="ruleBadge" class="hidden"></span>
         </div>
         
         <!-- 뷰 모드 토글 -->
@@ -1036,20 +1034,33 @@
 
           cell.onclick = () => selectDateKey(dateKey);
 
-          cell.innerHTML = `
-            <div class="flex items-center justify-between w-full overflow-hidden leading-none">
-              ${dayLabelHtml}
-              <span class="text-[8px] shrink-0 ${isBlackout ? 'text-amber-600 font-bold' : 'text-slate-400'}">쉼</span>
-            </div>
-            <div class="text-center">
-              <div class="text-[9px] font-bold truncate ${isBlackout ? 'text-amber-800' : 'text-slate-400'}">
-                ${item.reason || '쉼'}
+          if (isBlackout) {
+            cell.innerHTML = `
+              <div class="flex items-center justify-between w-full overflow-hidden leading-none">
+                ${dayLabelHtml}
+                <span class="text-[8px] shrink-0 text-amber-600 font-bold">쉼</span>
               </div>
-            </div>
-            <div class="text-[8px] text-center ${isBlackout ? 'text-amber-600 font-medium' : 'text-slate-300'}">
-              ${isBlackout ? '행사일' : '주일예배'}
-            </div>
-          `;
+              <div class="my-auto text-center">
+                <div class="text-[10px] font-bold truncate text-amber-800">
+                  ${item.reason || '행사일'}
+                </div>
+              </div>
+              <div class="h-2"></div>
+            `;
+          } else {
+            // 주일예배 (가운데 주일예배만 깔끔하게 표시)
+            cell.innerHTML = `
+              <div class="flex items-center justify-start w-full overflow-hidden leading-none">
+                ${dayLabelHtml}
+              </div>
+              <div class="my-auto text-center">
+                <div class="text-[10px] font-extrabold tracking-tight text-slate-400">
+                  주일예배
+                </div>
+              </div>
+              <div class="h-2"></div>
+            `;
+          }
         } else {
           // 달력 범위 밖 일자
           cell.className = "h-14 p-1 rounded-xl border border-slate-100 bg-slate-50/40 flex flex-col justify-between";
