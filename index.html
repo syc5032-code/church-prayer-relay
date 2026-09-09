@@ -1666,17 +1666,19 @@
           participantsHtml = `
             <div class="mt-2.5 space-y-1.5">
               ${list.map(p => `
-                <div class="flex items-center justify-between bg-slate-50/80 hover:bg-slate-50 px-2.5 py-2 rounded-xl border border-slate-100/90 transition">
+                <div class="flex items-center justify-between p-2.5 bg-gradient-to-r from-slate-50/90 via-slate-50/50 to-white rounded-xl border border-slate-200/80 hover:border-indigo-300 hover:shadow-2xs transition-all">
                   <div class="flex items-center space-x-2.5 min-w-0">
-                    <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs shadow-2xs shrink-0 ring-1 ring-white">
+                    <span class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-600 text-white flex items-center justify-center font-black text-xs shadow-xs ring-2 ring-white shrink-0">
                       ${escapeHtml(p.name.charAt(0))}
                     </span>
-                    <span class="text-sm font-black text-slate-900 tracking-tight truncate">${escapeHtml(p.name)}</span>
-                    <span class="text-[11px] font-bold bg-white text-indigo-700 border border-indigo-100/80 px-2 py-0.5 rounded-md shrink-0 shadow-2xs">
+                    <span class="w-16 shrink-0 font-black text-slate-900 text-[13.5px] tracking-tight truncate text-left">
+                      ${escapeHtml(p.name)}
+                    </span>
+                    <span class="text-[11px] font-extrabold text-indigo-700 bg-indigo-50/90 border border-indigo-200/70 px-2.5 py-0.5 rounded-full shrink-0 shadow-2xs">
                       ${escapeHtml(p.cell)}
                     </span>
                   </div>
-                  <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg text-xs font-semibold transition touch-bounce shrink-0 ml-1">
+                  <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-xs text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 px-2.5 py-1 rounded-lg font-bold transition touch-bounce shrink-0 ml-1">
                     취소
                   </button>
                 </div>
