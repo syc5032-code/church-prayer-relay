@@ -640,6 +640,7 @@
     let schedulerConfig = {
       startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
       startDayNum: 134,        // 134일차
+      startRound: 6,           // 6차 순환부터 시작
       totalDays: 120,          // 4개월 분량 넉넉하게 생성
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
@@ -719,10 +720,12 @@
           calendarDaysMap[dateKey] = item;
         } else {
           const qLength = schedulerConfig.leaderQueue.length;
+          const turnInCycle = (leaderIdx % qLength) + 1;
           const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
           const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
           const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? qItem.role : (leaderName === '유정심' ? '리더' : '군단리더');
-          const round = Math.floor(leaderIdx / qLength) + 1;
+          const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
+          const round = Math.floor(leaderIdx / qLength) + startRound;
 
           const item = {
             isPrayerDay: true,
@@ -735,7 +738,9 @@
             date: displayDate,
             leader: leaderName,
             role: leaderRole,
-            round: round
+            round: round,
+            turnInCycle: turnInCycle,
+            totalInCycle: qLength
           };
 
           calendarDaysMap[dateKey] = item;
@@ -775,6 +780,7 @@
         schedulerConfig = {
           startDate: "2026-08-18",
           startDayNum: 134,
+          startRound: 6,
           totalDays: 120,
           excludeFriday: false,
           excludeSunday: true,
@@ -782,6 +788,10 @@
           blackoutDates: oldBlackouts
         };
         saveConfigData();
+      }
+
+      if (schedulerConfig && !schedulerConfig.startRound) {
+        schedulerConfig.startRound = 6;
       }
 
       // 리더 역할 동기화 (유정심 리더 및 어른 리더 -> 리더 전환) 및 최순호 추가
@@ -910,12 +920,14 @@
       if (bigTitle) bigTitle.innerText = `${currentCalendarYear}년 ${currentCalendarMonth}월`;
       
       if (subDesc) {
-        if (currentCalendarMonth === 8) {
-          subDesc.innerText = '8월 릴레이 일정 (134일차 ~ 145일차)';
-        } else if (currentCalendarMonth === 9) {
-          subDesc.innerText = '9월 릴레이 일정 (146일차 ~ 158일차)';
+        const daysInThisMonth = prayerDaysList.filter(item => item.year === currentCalendarYear && item.month === currentCalendarMonth);
+        if (daysInThisMonth.length > 0) {
+          const firstItem = daysInThisMonth[0];
+          const lastItem = daysInThisMonth[daysInThisMonth.length - 1];
+          const uniqueRounds = [...new Set(daysInThisMonth.map(item => `${item.round}차`))].join(' ~ ');
+          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정 (${uniqueRounds} 순환 · ${firstItem.dayNum}일차 ~ ${lastItem.dayNum}일차)`;
         } else {
-          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정 (순환 배정 계속)`;
+          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정`;
         }
       }
 
@@ -990,6 +1002,7 @@
           }
 
           cell.onclick = () => selectDateKey(dateKey);
+          cell.title = `${item.date} (${item.dayNum}일차) · ${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle}번째 (${item.leader})`;
 
           cell.innerHTML = `
             <div class="flex items-center justify-between w-full overflow-hidden leading-none">
@@ -1123,6 +1136,11 @@
                 ? (isSelected ? 'text-rose-700 font-black' : 'text-rose-600 font-bold') 
                 : (isSelected ? 'text-indigo-200' : 'text-slate-400')
             }">${item.dayNum}일차</span>
+            <span class="text-[9px] font-extrabold ${
+              isToday 
+                ? (isSelected ? 'text-rose-800' : 'text-rose-600') 
+                : (isSelected ? 'text-indigo-100' : 'text-purple-600')
+            }">(${item.round}차-${item.turnInCycle})</span>
           </div>
           <span class="text-xs font-black mt-0.5 ${
             isToday 
@@ -1239,7 +1257,7 @@
       const yoil = item.date.split(' ')[1];
       dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 ${yoil}`;
 
-      roundBadge.innerText = `${item.round}차 순환`;
+      roundBadge.innerText = `${item.round}차 순환 (${item.turnInCycle}/${item.totalInCycle || 25}번째)`;
       leaderText.innerText = item.leader;
 
       leaderRoleBadge.className = "text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded";
@@ -1553,7 +1571,7 @@
       const pct = Math.round((coveredHours / 24) * 100);
       let text = `[🔥 뉴사운드교회 성전 릴레이기도 현황]\n`;
       text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
-      text += `👤 담당: ${item.leader} ${item.role || '군단리더'} (${item.round}차 순환)\n`;
+      text += `👤 담당: ${item.leader} ${item.role || '군단리더'} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
       text += `📊 24시간 커버: ${coveredHours}/24시간 (${pct}% 달성)\n`;
       text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
 
@@ -1920,7 +1938,9 @@
             dateKey: item.dateKey,
             leader: item.leader,
             role: item.role || (item.leader === '유정심' ? '리더' : '군단리더'),
-            round: item.round
+            round: item.round,
+            turnInCycle: item.turnInCycle,
+            totalInCycle: item.totalInCycle
           });
         }
       });
@@ -1963,7 +1983,7 @@
                 </div>
                 <span class="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">군단리더 담당</span>
               </div>
-              <p class="text-xs font-bold text-indigo-950 mt-1">👤 ${m.leader} (${m.round}차 순환)</p>
+              <p class="text-xs font-bold text-indigo-950 mt-1">👤 ${m.leader} (${m.round}차 순환 ${m.turnInCycle}/${m.totalInCycle || 25}번째)</p>
             </div>
           `;
         } else {
@@ -2013,6 +2033,7 @@
           <div>
             <div class="flex items-center space-x-1.5">
               <span class="font-black text-indigo-700">${item.dayNum}일차</span>
+              <span class="text-[10px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded">${item.round}차 ${item.turnInCycle}번</span>
               <span class="font-bold text-slate-800">${item.date}</span>
               <span class="text-[10px] text-slate-500">${item.leader}</span>
             </div>
@@ -2251,6 +2272,9 @@
 
         if (configRows && configRows.config_data) {
           schedulerConfig = configRows.config_data;
+          if (!schedulerConfig.startRound) {
+            schedulerConfig.startRound = 6;
+          }
           localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
           generateDynamicSchedule();
         }

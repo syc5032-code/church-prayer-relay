@@ -69,6 +69,7 @@ VALUES (
   '{
     "startDate": "2026-08-18",
     "startDayNum": 134,
+    "startRound": 6,
     "totalDays": 120,
     "excludeFriday": false,
     "excludeSunday": true,
