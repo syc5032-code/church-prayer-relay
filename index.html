@@ -584,17 +584,24 @@
           </div>
         </div>
 
-        <!-- 6) 기본 요일 쉼 설정 옵션 -->
-        <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-xs">
-          <span class="font-bold text-slate-700">기본 요일 쉼 설정</span>
-          <div class="flex items-center space-x-3">
+        <!-- 6) 기본 요일 & 공휴일 쉼 설정 옵션 -->
+        <div class="border-t border-slate-100 pt-3 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800">기본 요일 & 공휴일 쉼 설정</span>
+            <span class="text-[10px] text-slate-400">쉬는 날만큼 릴레이 순번 자동 연기</span>
+          </div>
+          <div class="flex items-center justify-between flex-wrap gap-2 bg-slate-50 p-2 rounded-xl border border-slate-200/80">
             <label class="flex items-center space-x-1 cursor-pointer">
               <input type="checkbox" id="cfgExcludeSunday" onchange="toggleDayExclusion('sunday', this.checked)" class="rounded text-indigo-600" checked>
-              <span class="font-semibold text-slate-700">주일(일) 쉼</span>
+              <span class="font-bold text-slate-700">주일(일) 쉼</span>
             </label>
             <label class="flex items-center space-x-1 cursor-pointer">
               <input type="checkbox" id="cfgExcludeFriday" onchange="toggleDayExclusion('friday', this.checked)" class="rounded text-indigo-600">
-              <span class="font-semibold text-slate-700">금요일 쉼</span>
+              <span class="font-bold text-slate-700">금요일 쉼</span>
+            </label>
+            <label class="flex items-center space-x-1 cursor-pointer">
+              <input type="checkbox" id="cfgExcludeHoliday" onchange="toggleDayExclusion('holiday', this.checked)" class="rounded text-rose-600" checked>
+              <span class="font-bold text-rose-700">🇰🇷 공휴일/대체휴일 쉼</span>
             </label>
           </div>
         </div>
@@ -783,6 +790,69 @@
       { name: "최순호", role: "리더" }
     ];
 
+    // 대한민국 법정 공휴일 및 대체공휴일 공식 달력 (2026년~2028년)
+    const KOREAN_HOLIDAYS = {
+      // 2026년
+      "2026-01-01": "신정",
+      "2026-02-16": "설날 연휴",
+      "2026-02-17": "설날",
+      "2026-02-18": "설날 연휴",
+      "2026-03-01": "삼일절",
+      "2026-03-02": "삼일절 대체공휴일",
+      "2026-05-05": "어린이날",
+      "2026-05-24": "부처님오신날",
+      "2026-05-25": "부처님오신날 대체공휴일",
+      "2026-06-06": "현충일",
+      "2026-08-15": "광복절",
+      "2026-08-17": "광복절 대체공휴일",
+      "2026-09-24": "추석 연휴",
+      "2026-09-25": "추석",
+      "2026-09-26": "추석 연휴",
+      "2026-10-03": "개천절",
+      "2026-10-05": "개천절 대체공휴일",
+      "2026-10-09": "한글날",
+      "2026-12-25": "성탄절",
+
+      // 2027년
+      "2027-01-01": "신정",
+      "2027-02-06": "설날 연휴",
+      "2027-02-07": "설날",
+      "2027-02-08": "설날 연휴",
+      "2027-02-09": "설날 대체공휴일",
+      "2027-03-01": "삼일절",
+      "2027-05-05": "어린이날",
+      "2027-05-13": "부처님오신날",
+      "2027-06-06": "현충일",
+      "2027-08-15": "광복절",
+      "2027-08-16": "광복절 대체공휴일",
+      "2027-09-14": "추석 연휴",
+      "2027-09-15": "추석",
+      "2027-09-16": "추석 연휴",
+      "2027-10-03": "개천절",
+      "2027-10-04": "개천절 대체공휴일",
+      "2027-10-09": "한글날",
+      "2027-10-11": "한글날 대체공휴일",
+      "2027-12-25": "성탄절",
+      "2027-12-27": "성탄절 대체공휴일",
+
+      // 2028년
+      "2028-01-01": "신정",
+      "2028-01-26": "설날 연휴",
+      "2028-01-27": "설날",
+      "2028-01-28": "설날 연휴",
+      "2028-03-01": "삼일절",
+      "2028-05-02": "부처님오신날",
+      "2028-05-05": "어린이날",
+      "2028-06-06": "현충일",
+      "2028-08-15": "광복절",
+      "2028-10-02": "추석 연휴",
+      "2028-10-03": "개천절 및 추석",
+      "2028-10-04": "추석 연휴",
+      "2028-10-05": "대체공휴일",
+      "2028-10-09": "한글날",
+      "2028-12-25": "성탄절"
+    };
+
     const STORAGE_KEY_CONFIG = 'NEWSOUND_SCHEDULER_CONFIG_V5';
     const STORAGE_KEY_PRAYER = 'NEWSOUND_PRAYER_DATA_V3';
     const STORAGE_KEY_SUPABASE = 'NEWSOUND_SUPABASE_CONFIG_V1';
@@ -804,6 +874,7 @@
       totalDays: 365,          // 1년 분량 넉넉하게 자동 생성 (18차 순환까지)
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
+      excludeHoliday: true,    // 🇰🇷 대한민국 공휴일 및 대체공휴일 쉼 (자동 건너뜀)
       leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
       blackoutDates: {},
       dateNotices: {}
@@ -863,6 +934,9 @@
         } else if (schedulerConfig.excludeFriday && dayOfWeek === 5) {
           isExcluded = true;
           reason = '금요기도회';
+        } else if (schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) {
+          isExcluded = true;
+          reason = KOREAN_HOLIDAYS[dateKey];
         } else if (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) {
           isExcluded = true;
           reason = schedulerConfig.blackoutDates[dateKey];
@@ -946,6 +1020,7 @@
           totalDays: 365,
           excludeFriday: false,
           excludeSunday: true,
+          excludeHoliday: true,
           leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
           blackoutDates: oldBlackouts
         };
@@ -965,6 +1040,11 @@
       // 장소 안내 공지 객체 초기화
       if (schedulerConfig && !schedulerConfig.dateNotices) {
         schedulerConfig.dateNotices = {};
+      }
+
+      // 대한민국 법정 공휴일 쉼 설정 기본 초기화
+      if (schedulerConfig && schedulerConfig.excludeHoliday === undefined) {
+        schedulerConfig.excludeHoliday = true;
       }
 
       // 리더 역할 동기화 (군단리더/어른 리더 -> 리더 전환) 및 최순호 추가
@@ -1211,19 +1291,35 @@
           `;
         } else if (item && !item.isPrayerDay) {
           const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey];
+          const isHoliday = schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey];
           const dimClass = isFilterActive ? 'opacity-30 hover:opacity-80' : '';
           
           cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${dimClass} ${
-            isSelected ? 'ring-2 ring-amber-400' : ''
+            isSelected ? 'ring-2 ring-rose-400' : ''
           } ${
-            isBlackout 
-              ? 'bg-amber-50 border-amber-200 text-amber-900' 
-              : 'bg-slate-100/80 border-slate-200 text-slate-400'
+            isHoliday
+              ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+              : (isBlackout 
+                  ? 'bg-amber-50 border-amber-200 text-amber-900' 
+                  : 'bg-slate-100/80 border-slate-200 text-slate-400')
           }`;
 
           cell.onclick = () => selectDateKey(dateKey);
 
-          if (isBlackout) {
+          if (isHoliday) {
+            cell.innerHTML = `
+              <div class="flex items-center justify-between w-full overflow-hidden leading-none">
+                <span class="font-black text-[11px] text-rose-600">${day}</span>
+                <span class="text-[8px] shrink-0 text-rose-600 font-extrabold bg-rose-100/80 px-1 py-0.2 rounded">공휴일</span>
+              </div>
+              <div class="my-auto text-center">
+                <div class="text-[10px] font-bold truncate text-rose-800">
+                  ${item.reason || '공휴일'}
+                </div>
+              </div>
+              <div class="h-1"></div>
+            `;
+          } else if (isBlackout) {
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
                 ${dayLabelHtml}
@@ -1244,7 +1340,7 @@
               </div>
               <div class="my-auto text-center">
                 <div class="text-[10px] font-extrabold tracking-tight text-slate-400">
-                  주일예배
+                  ${item.reason || '주일예배'}
                 </div>
               </div>
               <div class="h-1"></div>
@@ -1536,21 +1632,26 @@
       }
 
       if (!item || !item.isPrayerDay) {
-        // 쉬는 날 (주일 또는 행사일)
+        // 쉬는 날 (주일, 공휴일 또는 행사일)
         const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey];
-        const reasonName = isBlackout ? schedulerConfig.blackoutDates[selectedDateKey] : '주일예배';
+        const isHoliday = schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[selectedDateKey];
+        const reasonName = isHoliday ? KOREAN_HOLIDAYS[selectedDateKey] : (isBlackout ? schedulerConfig.blackoutDates[selectedDateKey] : (item && item.reason ? item.reason : '주일예배'));
 
-        dayTag.innerText = "쉼 (릴레이 제외)";
-        dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900";
+        dayTag.innerText = isHoliday ? "공휴일 쉼" : "쉼 (릴레이 제외)";
+        dayTag.className = isHoliday 
+          ? "px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-100 text-rose-900" 
+          : "px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900";
         
         const m = selectedDateKey.split('-')[1];
         const d = selectedDateKey.split('-')[2];
         dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 (${item ? item.date.split(' ')[1].replace(/[()]/g, '') : ''})`;
-        roundBadge.innerText = isBlackout ? "교회 행사" : "주일 쉼";
+        roundBadge.innerText = isHoliday ? "법정 공휴일" : (isBlackout ? "교회 행사" : "주일 쉼");
 
         leaderText.innerText = reasonName;
-        leaderRoleBadge.className = "text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200";
-        leaderRoleBadge.innerText = isBlackout ? "행사로 기도일 건너뜀" : "주일 정기 예배";
+        leaderRoleBadge.className = isHoliday 
+          ? "text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-200"
+          : "text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200";
+        leaderRoleBadge.innerText = isHoliday ? "공휴일 자동 연기" : (isBlackout ? "행사로 기도일 건너뜀" : "주일 정기 예배");
 
         statsTwoBox.classList.add('hidden');
         progressBarContainer.classList.add('hidden');
@@ -1559,9 +1660,11 @@
 
         blackoutNoticeBox.classList.remove('hidden');
         document.getElementById('blackoutNoticeTitle').innerText = `${reasonName} - 릴레이 기도 쉼`;
-        document.getElementById('blackoutNoticeDesc').innerText = isBlackout
-          ? `특별 행사 [${reasonName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 군단은 다음 기도일로 착착 밀렸습니다.`
-          : `주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.`;
+        document.getElementById('blackoutNoticeDesc').innerText = isHoliday
+          ? `대한민국 법정 공휴일 [${reasonName}]로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 자동 연쇄 밀림되었습니다.`
+          : (isBlackout
+              ? `특별 행사 [${reasonName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 착착 밀렸습니다.`
+              : `주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.`);
 
         renderDateNoticeUI();
         return;
@@ -1968,8 +2071,10 @@
 
       const sundayCb = document.getElementById('cfgExcludeSunday');
       const fridayCb = document.getElementById('cfgExcludeFriday');
+      const holidayCb = document.getElementById('cfgExcludeHoliday');
       if (sundayCb) sundayCb.checked = !!schedulerConfig.excludeSunday;
       if (fridayCb) fridayCb.checked = !!schedulerConfig.excludeFriday;
+      if (holidayCb) holidayCb.checked = !!schedulerConfig.excludeHoliday;
 
       document.getElementById('shiftManagerModal').classList.remove('hidden');
     }
@@ -2528,6 +2633,8 @@
         schedulerConfig.excludeSunday = isChecked;
       } else if (dayType === 'friday') {
         schedulerConfig.excludeFriday = isChecked;
+      } else if (dayType === 'holiday') {
+        schedulerConfig.excludeHoliday = isChecked;
       }
       saveConfigData();
       generateDynamicSchedule();
@@ -2549,7 +2656,10 @@
         }
       }
 
-      showToast(`요일 쉼 설정이 변경되었습니다.`, '⚙️');
+      const msg = dayType === 'holiday'
+        ? (isChecked ? '대한민국 공휴일 쉼이 활성화되었습니다.' : '공휴일 쉼이 해제되어 정상 배정됩니다.')
+        : '요일 쉼 설정이 변경되었습니다.';
+      showToast(msg, '⚙️');
     }
 
     function renderScheduleRangeUI() {
