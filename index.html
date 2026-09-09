@@ -632,6 +632,12 @@
     const STORAGE_KEY_PRAYER = 'NEWSOUND_PRAYER_DATA_V3';
     const STORAGE_KEY_SUPABASE = 'NEWSOUND_SUPABASE_CONFIG_V1';
 
+    // 뉴사운드교회 Supabase 클라우드 기본 설정
+    const DEFAULT_SUPABASE_CONFIG = {
+      url: 'https://lmzvixtegurlxyfuypxn.supabase.co',
+      anonKey: 'sb_publishable_Hua9O2Gf5Q-wSpIR4KqZQA_-18tvoYW'
+    };
+
     let supabaseClient = null;
     let supabaseRealtimeChannel = null;
     let isCloudConnected = false;
@@ -2149,8 +2155,13 @@
     function getSavedSupabaseConfig() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY_SUPABASE);
-        return saved ? JSON.parse(saved) : null;
-      } catch(e) { return null; }
+        if (saved === 'disabled') return null;
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.url && parsed.anonKey) return parsed;
+        }
+      } catch(e) { return DEFAULT_SUPABASE_CONFIG; }
+      return DEFAULT_SUPABASE_CONFIG;
     }
 
     async function initSupabase(isManual = false) {
@@ -2312,9 +2323,9 @@
     }
 
     function openSupabaseModal() {
-      const cfg = getSavedSupabaseConfig() || {};
-      document.getElementById('inputSupabaseUrl').value = cfg.url || '';
-      document.getElementById('inputSupabaseKey').value = cfg.anonKey || '';
+      const cfg = getSavedSupabaseConfig() || DEFAULT_SUPABASE_CONFIG;
+      document.getElementById('inputSupabaseUrl').value = cfg.url || DEFAULT_SUPABASE_CONFIG.url;
+      document.getElementById('inputSupabaseKey').value = cfg.anonKey || DEFAULT_SUPABASE_CONFIG.anonKey;
       document.getElementById('supabaseModal').classList.remove('hidden');
     }
 
@@ -2394,7 +2405,7 @@
 
     function disconnectSupabase() {
       if (confirm('Supabase 클라우드 연동을 해제하고 로컬 모드로 전환하시겠습니까?')) {
-        localStorage.removeItem(STORAGE_KEY_SUPABASE);
+        localStorage.setItem(STORAGE_KEY_SUPABASE, 'disabled');
         if (supabaseRealtimeChannel && supabaseClient) {
           supabaseClient.removeChannel(supabaseRealtimeChannel);
         }
