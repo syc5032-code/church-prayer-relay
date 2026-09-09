@@ -221,7 +221,7 @@
       <div class="relative z-10 mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-2 min-w-0">
           <h2 id="curLeaderText" class="text-lg font-black text-slate-900 tracking-tight truncate">천시온</h2>
-          <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shrink-0">군단리더 담당</span>
+          <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shrink-0">리더 담당</span>
         </div>
         <span id="curRoundBadge" class="text-xs bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-md border border-purple-100 shrink-0 whitespace-nowrap">6차 순환 (20/25번째)</span>
       </div>
@@ -503,8 +503,9 @@
             <div class="grid grid-cols-12 gap-1.5">
               <input type="text" id="newLeaderName" placeholder="성함 (예: 홍길동)" class="col-span-5 px-2 py-1.5 bg-white border border-slate-200 rounded-lg text-xs">
               <select id="newLeaderRole" class="col-span-4 px-1 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold">
-                <option value="군단리더">군단리더</option>
-                <option value="리더">리더</option>
+                <option value="리더" selected>리더</option>
+                <option value="간사">간사</option>
+                <option value="교역자">교역자</option>
                 <option value="기타">기타</option>
               </select>
               <button onclick="addLeaderToQueue()" class="col-span-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-xs touch-bounce">
@@ -731,31 +732,31 @@
   <script>
     // 6차 릴레이 공식 기본 25순번 (김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함)
     const DEFAULT_CYCLE_QUEUE = [
-      { name: "김용태", role: "군단리더" },
-      { name: "이연경", role: "군단리더" },
-      { name: "박진호", role: "군단리더" },
-      { name: "김은진", role: "군단리더", note: "1차" },
-      { name: "이성령", role: "군단리더" },
-      { name: "김태홍", role: "군단리더", note: "1차" },
-      { name: "천은빈", role: "군단리더" },
+      { name: "김용태", role: "리더" },
+      { name: "이연경", role: "리더" },
+      { name: "박진호", role: "리더" },
+      { name: "김은진", role: "리더", note: "1차" },
+      { name: "이성령", role: "리더" },
+      { name: "김태홍", role: "리더", note: "1차" },
+      { name: "천은빈", role: "리더" },
       { name: "유정심", role: "리더" },
-      { name: "서진환", role: "군단리더" },
-      { name: "최윤석", role: "군단리더" },
-      { name: "김우람", role: "군단리더" },
-      { name: "김은진", role: "군단리더", note: "2차" },
-      { name: "강수오", role: "군단리더" },
-      { name: "김정금", role: "군단리더" },
-      { name: "이성재", role: "군단리더" },
-      { name: "김태홍", role: "군단리더", note: "2차" },
-      { name: "라하라", role: "군단리더" },
-      { name: "김은진", role: "군단리더", note: "3차" },
-      { name: "장한나", role: "군단리더" },
-      { name: "천시온", role: "군단리더" },
-      { name: "곽신재", role: "군단리더" },
-      { name: "이정화", role: "군단리더" },
-      { name: "김성현", role: "군단리더" },
-      { name: "류고운", role: "군단리더" },
-      { name: "최순호", role: "군단리더" }
+      { name: "서진환", role: "리더" },
+      { name: "최윤석", role: "리더" },
+      { name: "김우람", role: "리더" },
+      { name: "김은진", role: "리더", note: "2차" },
+      { name: "강수오", role: "리더" },
+      { name: "김정금", role: "리더" },
+      { name: "이성재", role: "리더" },
+      { name: "김태홍", role: "리더", note: "2차" },
+      { name: "라하라", role: "리더" },
+      { name: "김은진", role: "리더", note: "3차" },
+      { name: "장한나", role: "리더" },
+      { name: "천시온", role: "리더" },
+      { name: "곽신재", role: "리더" },
+      { name: "이정화", role: "리더" },
+      { name: "김성현", role: "리더" },
+      { name: "류고운", role: "리더" },
+      { name: "최순호", role: "리더" }
     ];
 
     const STORAGE_KEY_CONFIG = 'NEWSOUND_SCHEDULER_CONFIG_V5';
@@ -860,7 +861,7 @@
           const turnInCycle = (leaderIdx % qLength) + 1;
           const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
           const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
-          const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? qItem.role : (leaderName === '유정심' ? '리더' : '군단리더');
+          const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
           const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
           const round = Math.floor(leaderIdx / qLength) + startRound;
 
@@ -942,15 +943,12 @@
         schedulerConfig.dateNotices = {};
       }
 
-      // 리더 역할 동기화 (유정심 리더 및 어른 리더 -> 리더 전환) 및 최순호 추가
+      // 리더 역할 동기화 (군단리더/어른 리더 -> 리더 전환) 및 최순호 추가
       if (schedulerConfig && schedulerConfig.leaderQueue) {
         let queueModified = false;
         schedulerConfig.leaderQueue.forEach(item => {
           if (typeof item === 'object' && item !== null) {
-            if (item.name === '유정심' && item.role !== '리더') {
-              item.role = '리더';
-              queueModified = true;
-            } else if (item.role === '어른 리더') {
+            if (item.role === '군단리더' || item.role === '어른 리더' || !item.role) {
               item.role = '리더';
               queueModified = true;
             }
@@ -962,7 +960,7 @@
           return n === '최순호';
         });
         if (!hasChoi) {
-          schedulerConfig.leaderQueue.push({ name: "최순호", role: "군단리더" });
+          schedulerConfig.leaderQueue.push({ name: "최순호", role: "리더" });
           queueModified = true;
         }
 
@@ -1269,7 +1267,7 @@
       const seen = new Set();
       schedulerConfig.leaderQueue.forEach(q => {
         const name = typeof q === 'object' && q !== null ? q.name : q;
-        const role = typeof q === 'object' && q !== null && q.role ? q.role : (name === '유정심' ? '리더' : '군단리더');
+        const role = typeof q === 'object' && q !== null && q.role ? (q.role === '군단리더' ? '리더' : q.role) : '리더';
         if (name && !seen.has(name)) {
           seen.add(name);
           uniqueLeaders.push({ name, role });
@@ -1338,7 +1336,7 @@
       const chipsContainer = document.getElementById('selectedLeaderChipsContainer');
 
       const leaderObj = schedulerConfig.leaderQueue.find(q => (typeof q === 'object' ? q.name : q) === leaderName);
-      const role = leaderObj && typeof leaderObj === 'object' && leaderObj.role ? leaderObj.role : (leaderName === '유정심' ? '리더' : '군단리더');
+      const role = leaderObj && typeof leaderObj === 'object' && leaderObj.role ? (leaderObj.role === '군단리더' ? '리더' : leaderObj.role) : '리더';
 
       if (title) title.innerText = `${leaderName} ${role} 담당 일정`;
       if (count) count.innerText = `총 ${matches.length}회 배정`;
@@ -1564,7 +1562,8 @@
       leaderText.innerText = item.leader;
 
       leaderRoleBadge.className = "text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded";
-      leaderRoleBadge.innerText = `${item.role || '군단리더'} 담당`;
+      const displayRole = (item.role === '군단리더' ? '리더' : item.role) || '리더';
+      leaderRoleBadge.innerText = `${displayRole} 담당`;
 
       // 통계 계산
       const dayData = prayerData[item.dayNum] || {};
@@ -1889,7 +1888,8 @@
       const pct = Math.round((coveredHours / 24) * 100);
       let text = `[🔥 뉴사운드교회 성전 릴레이기도 현황]\n`;
       text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
-      text += `👤 담당: ${item.leader} ${item.role || '군단리더'} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
+      const shareRole = (item.role === '군단리더' ? '리더' : item.role) || '리더';
+      text += `👤 담당: ${item.leader} ${shareRole} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
       text += `📊 기도 진행: ${coveredHours}/24시간 (${pct}% 달성)\n`;
       text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
 
@@ -2197,7 +2197,7 @@
 
       q.forEach((item, idx) => {
         const name = typeof item === 'object' && item !== null ? item.name : item;
-        const role = typeof item === 'object' && item !== null && item.role ? item.role : '군단리더';
+        const role = typeof item === 'object' && item !== null && item.role ? (item.role === '군단리더' ? '리더' : item.role) : '리더';
         const note = typeof item === 'object' && item !== null && item.note ? item.note : '';
 
         const row = document.createElement('div');
@@ -2409,7 +2409,7 @@
 
       let matches = [];
 
-      // 1. 군단리더/리더 담당 날짜 검색
+      // 1. 리더 담당 날짜 검색
       prayerDaysList.forEach(item => {
         if (item.leader.includes(query)) {
           matches.push({
@@ -2418,7 +2418,7 @@
             date: item.date,
             dateKey: item.dateKey,
             leader: item.leader,
-            role: item.role || (item.leader === '유정심' ? '리더' : '군단리더'),
+            role: (item.role === '군단리더' ? '리더' : item.role) || '리더',
             round: item.round,
             turnInCycle: item.turnInCycle,
             totalInCycle: item.totalInCycle
@@ -2462,7 +2462,7 @@
                   <span class="text-xs font-black text-indigo-700">${m.dayNum}일차</span>
                   <span class="text-xs font-bold text-slate-800">${m.date}</span>
                 </div>
-                <span class="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">군단리더 담당</span>
+                <span class="text-[10px] bg-indigo-600 text-white font-bold px-1.5 py-0.5 rounded">리더 담당</span>
               </div>
               <p class="text-xs font-bold text-indigo-950 mt-1">👤 ${m.leader} (${m.round}차 순환 ${m.turnInCycle}/${m.totalInCycle || 25}번째)</p>
             </div>
