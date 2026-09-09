@@ -263,6 +263,29 @@
       </div>
     </div>
 
+    <!-- 📢 해당 날짜 뉴젠홀/장소 이용 안내 공지 배너 -->
+    <div id="dateNoticeBanner" class="hidden bg-amber-50 border-2 border-amber-300 rounded-2xl p-3.5 shadow-xs text-xs space-y-1 relative">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-1.5 font-black text-amber-950">
+          <span class="text-sm">📢</span>
+          <span class="text-xs font-black tracking-tight" id="dateNoticeTitleText">뉴젠홀 장소 이용 안내 공지</span>
+        </div>
+        <div id="dateNoticeAdminActions" class="hidden flex items-center space-x-1">
+          <button onclick="openDateNoticeModal()" class="text-[10px] bg-amber-200/90 hover:bg-amber-300 text-amber-950 font-bold px-2 py-0.5 rounded touch-bounce">수정</button>
+          <button onclick="deleteDateNotice()" class="text-[10px] bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-2 py-0.5 rounded touch-bounce">삭제</button>
+        </div>
+      </div>
+      <p id="dateNoticeContent" class="text-amber-900 font-semibold text-xs leading-relaxed whitespace-pre-wrap pl-5 pt-0.5">
+      </p>
+    </div>
+
+    <!-- 관리자 모드일 때 공지가 없는 날 노출되는 공지 추가 버튼 -->
+    <div id="adminAddNoticeBtnWrapper" class="hidden">
+      <button onclick="openDateNoticeModal()" class="w-full py-2 bg-amber-50 hover:bg-amber-100 border border-dashed border-amber-300 text-amber-800 font-bold rounded-xl text-xs flex items-center justify-center space-x-1 touch-bounce">
+        <span>📢</span> <span id="adminAddNoticeBtnText">이 날짜에 뉴젠홀 장소 이용 공지 등록하기</span>
+      </button>
+    </div>
+
     <!-- 시간대 빠른 필터 탭 (좌우 넘김 버튼 추가) -->
     <div id="timeFilterSectionWrapper" class="relative flex items-center">
       <!-- 좌측 스크롤 버튼 -->
@@ -335,10 +358,19 @@
           <input type="password" id="inputPin" maxlength="4" placeholder="숫자 4자리" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 tracking-widest text-center">
         </div>
 
+        <!-- 해당 날짜 뉴젠홀 이용 공지 알림 박스 (등록되어 있을 때 표시) -->
+        <div id="bookingModalNoticeBox" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 text-[11px] text-amber-950 space-y-1">
+          <div class="font-bold flex items-center space-x-1.5 text-amber-950">
+            <span class="text-sm">📢</span>
+            <span>뉴젠홀 장소 이용 필독 안내</span>
+          </div>
+          <p id="bookingModalNoticeText" class="text-amber-900 leading-normal pl-4 font-semibold whitespace-pre-wrap"></p>
+        </div>
+
         <div class="bg-indigo-50/70 p-3 rounded-xl border border-indigo-100 text-[11px] text-indigo-900 space-y-0.5">
           <p class="font-bold">💡 안내사항</p>
           <p>• 같은 시간대에 여러 명이 함께 신청하여 함께 기도하실 수 있습니다.</p>
-          <p>• 성전 본당에서 정해진 1시간 동안 마음을 모아 기도로 자리를 지켜주세요.</p>
+          <p>• 성전 뉴젠홀에서 정해진 1시간 동안 마음을 모아 기도로 자리를 지켜주세요.</p>
         </div>
 
         <div class="pt-2 flex items-center space-x-2">
@@ -509,7 +541,25 @@
           </div>
         </div>
 
-        <!-- 5) 기본 요일 쉼 설정 옵션 -->
+        <!-- 5) 📢 날짜별 뉴젠홀 이용 안내 공지 관리 -->
+        <div class="border-t border-slate-100 pt-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="font-bold text-slate-800 flex items-center space-x-1">
+                <span>📢</span> <span>뉴젠홀 장소 이용 공지 관리</span>
+              </span>
+              <p class="text-[10px] text-slate-400">행사 등으로 뉴젠홀 이용이 어려울 때 공지 등록</p>
+            </div>
+            <button onclick="openDateNoticeModal()" class="text-[10px] bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold px-2 py-1 rounded-md border border-amber-200 touch-bounce">
+              + 공지 추가
+            </button>
+          </div>
+          <div id="adminNoticeListContainer" class="space-y-1.5 max-h-36 overflow-y-auto">
+            <!-- JS로 등록된 공지 목록 렌더링 -->
+          </div>
+        </div>
+
+        <!-- 6) 기본 요일 쉼 설정 옵션 -->
         <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-xs">
           <span class="font-bold text-slate-700">기본 요일 쉼 설정</span>
           <div class="flex items-center space-x-3">
@@ -531,6 +581,42 @@
         <button onclick="closeShiftManagerModal()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-xs">
           확인 완료 및 닫기
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📢 날짜별 뉴젠홀 이용 안내 공지 등록/수정 모달 -->
+  <div id="dateNoticeModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <span class="text-xs font-bold text-amber-600 uppercase">장소 안내 공지</span>
+          <h3 class="text-base font-bold text-slate-900">📢 뉴젠홀 이용 안내 공지</h3>
+        </div>
+        <button onclick="closeDateNoticeModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 hover:bg-slate-200">✕</button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">대상 날짜 *</label>
+          <input type="date" id="noticeTargetDate" class="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">공지 내용 *</label>
+          <textarea id="inputNoticeContent" rows="4" placeholder="예: 행사로 인해 14:00~17:00 동안 뉴젠홀 사용이 어렵습니다. 해당 시간대에는 2층 소예배실(또는 중보기도실)을 이용해 주세요." class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 leading-relaxed"></textarea>
+          <p class="text-[10px] text-slate-400 mt-1">※ 등록된 공지는 해당 날짜의 화면 상단과 기도 신청 창에 성도님들께 눈에 띄게 노출됩니다.</p>
+        </div>
+
+        <div class="pt-2 flex items-center space-x-2">
+          <button onclick="closeDateNoticeModal()" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition touch-bounce">
+            취소
+          </button>
+          <button onclick="saveDateNotice()" class="w-2/3 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl text-xs shadow-md transition touch-bounce flex items-center justify-center space-x-1">
+            <span>💾</span>
+            <span>공지 저장 및 반영</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -694,7 +780,8 @@
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
       leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
-      blackoutDates: {}
+      blackoutDates: {},
+      dateNotices: {}
     };
 
     let calendarDaysMap = {}; // "YYYY-MM-DD" => dayItem
@@ -848,6 +935,11 @@
       if (schedulerConfig && (!schedulerConfig.totalDays || schedulerConfig.totalDays < 365)) {
         schedulerConfig.totalDays = 365;
         saveConfigData();
+      }
+
+      // 장소 안내 공지 객체 초기화
+      if (schedulerConfig && !schedulerConfig.dateNotices) {
+        schedulerConfig.dateNotices = {};
       }
 
       // 리더 역할 동기화 (유정심 리더 및 어른 리더 -> 리더 전환) 및 최순호 추가
@@ -1061,17 +1153,21 @@
             }
           }
 
+          const hasNotice = (schedulerConfig.dateNotices && schedulerConfig.dateNotices[dateKey]);
           cell.onclick = () => selectDateKey(dateKey);
-          cell.title = `${item.date} (${item.dayNum}일차) · ${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle}번째 (${item.leader})`;
+          cell.title = `${item.date} (${item.dayNum}일차) · ${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle}번째 (${item.leader})${hasNotice ? ' · [📢 뉴젠홀 장소 공지]' : ''}`;
 
           cell.innerHTML = `
             <div class="flex items-center justify-between w-full overflow-hidden leading-none">
               ${dayLabelHtml}
-              <span class="text-[9px] font-bold shrink-0 ${
-                isMatch
-                  ? (isSelected ? 'text-indigo-200' : 'text-indigo-700 font-black')
-                  : (isToday ? (isSelected ? 'text-rose-700' : 'text-rose-600') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
-              }">${item.dayNum}d</span>
+              <span class="flex items-center space-x-0.5 shrink-0">
+                ${hasNotice ? '<span class="text-[8px] animate-pulse" title="뉴젠홀 장소 공지">📢</span>' : ''}
+                <span class="text-[9px] font-bold ${
+                  isMatch
+                    ? (isSelected ? 'text-indigo-200' : 'text-indigo-700 font-black')
+                    : (isToday ? (isSelected ? 'text-rose-700' : 'text-rose-600') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
+                }">${item.dayNum}d</span>
+              </span>
             </div>
             <div class="text-center py-0.5">
               <div class="font-extrabold text-[11px] leading-tight truncate ${
@@ -1445,6 +1541,7 @@
           ? `특별 행사 [${reasonName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 군단은 다음 기도일로 착착 밀렸습니다.`
           : `주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.`;
 
+        renderDateNoticeUI();
         return;
       }
 
@@ -1490,6 +1587,7 @@
       progressBar.style.width = `${pct}%`;
       emptySlotCount.innerText = emptyCount;
       totalParticipantCount.innerText = totalPrayers;
+      renderDateNoticeUI();
     }
 
     // ========================================================
@@ -1623,6 +1721,18 @@
       document.getElementById('inputName').value = '';
       document.getElementById('inputCell').value = '';
       document.getElementById('inputPin').value = '';
+
+      const notice = schedulerConfig.dateNotices && schedulerConfig.dateNotices[selectedDateKey];
+      const modalNoticeBox = document.getElementById('bookingModalNoticeBox');
+      const modalNoticeText = document.getElementById('bookingModalNoticeText');
+      if (modalNoticeBox && modalNoticeText) {
+        if (notice) {
+          modalNoticeBox.classList.remove('hidden');
+          modalNoticeText.innerText = typeof notice === 'object' ? notice.text : notice;
+        } else {
+          modalNoticeBox.classList.add('hidden');
+        }
+      }
 
       document.getElementById('bookingModal').classList.remove('hidden');
     }
@@ -1788,6 +1898,12 @@
       text += `📊 기도 진행: ${coveredHours}/24시간 (${pct}% 달성)\n`;
       text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
 
+      if (schedulerConfig.dateNotices && schedulerConfig.dateNotices[item.dateKey]) {
+        const n = schedulerConfig.dateNotices[item.dateKey];
+        const nText = typeof n === 'object' ? n.text : n;
+        text += `📢 [뉴젠홀 장소 이용 안내]\n ${nText}\n\n`;
+      }
+
       if (emptyList.length > 0) {
         text += `⚠️ [공백 시간대 (기도 참여자 모집): ${emptyList.length}곳]\n`;
         text += emptyList.slice(0, 8).map(t => ` 👉 ${t}`).join('\n');
@@ -1823,6 +1939,7 @@
       renderBlackoutList();
       renderLeaderQueueUI();
       renderScheduleRangeUI();
+      renderAdminNoticeList();
 
       document.getElementById('inputEventStartDate').value = selectedDateKey;
       document.getElementById('inputEventEndDate').value = '';
@@ -1937,6 +2054,133 @@
           <button onclick="removeBlackoutDate('${dateKey}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs p-1 shrink-0 ml-1">
             해제 ✕
           </button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    // ========================================================
+    // 11-1. 📢 뉴젠홀 장소 이용 안내 공지 관리 (교역자/간사)
+    // ========================================================
+    function openDateNoticeModal(dateKey = null) {
+      const targetDate = dateKey || selectedDateKey;
+      const targetInput = document.getElementById('noticeTargetDate');
+      const contentInput = document.getElementById('inputNoticeContent');
+
+      if (targetInput) targetInput.value = targetDate;
+      const existing = schedulerConfig.dateNotices && schedulerConfig.dateNotices[targetDate];
+      if (contentInput) {
+        contentInput.value = existing ? (typeof existing === 'object' ? existing.text : existing) : '';
+      }
+      document.getElementById('dateNoticeModal').classList.remove('hidden');
+    }
+
+    function closeDateNoticeModal() {
+      document.getElementById('dateNoticeModal').classList.add('hidden');
+    }
+
+    function saveDateNotice() {
+      const targetDate = document.getElementById('noticeTargetDate').value;
+      const text = document.getElementById('inputNoticeContent').value.trim();
+
+      if (!targetDate) {
+        showToast('날짜를 선택해주세요.', '⚠️');
+        return;
+      }
+      if (!text) {
+        showToast('공지 내용을 입력해주세요.', '⚠️');
+        return;
+      }
+
+      if (!schedulerConfig.dateNotices) schedulerConfig.dateNotices = {};
+      schedulerConfig.dateNotices[targetDate] = {
+        text: text,
+        updatedAt: new Date().toISOString()
+      };
+
+      saveConfigData();
+      closeDateNoticeModal();
+      renderCalendar();
+      renderDateNoticeUI();
+      renderAdminNoticeList();
+      showToast(`${targetDate} 뉴젠홀 이용 공지가 등록되었습니다!`, '📢');
+    }
+
+    function deleteDateNotice(dateKey = null) {
+      const targetDate = dateKey || selectedDateKey;
+      if (!schedulerConfig.dateNotices || !schedulerConfig.dateNotices[targetDate]) return;
+
+      if (confirm(`${targetDate} 뉴젠홀 이용 공지를 삭제하시겠습니까?`)) {
+        delete schedulerConfig.dateNotices[targetDate];
+        saveConfigData();
+        renderCalendar();
+        renderDateNoticeUI();
+        renderAdminNoticeList();
+        showToast('공지가 삭제되었습니다.', '🗑️');
+      }
+    }
+
+    function renderDateNoticeUI() {
+      const banner = document.getElementById('dateNoticeBanner');
+      const content = document.getElementById('dateNoticeContent');
+      const adminActions = document.getElementById('dateNoticeAdminActions');
+      const addBtnWrapper = document.getElementById('adminAddNoticeBtnWrapper');
+      const addBtnText = document.getElementById('adminAddNoticeBtnText');
+
+      if (!banner || !content) return;
+
+      const notice = schedulerConfig.dateNotices && schedulerConfig.dateNotices[selectedDateKey];
+
+      if (notice) {
+        banner.classList.remove('hidden');
+        content.innerText = typeof notice === 'object' ? notice.text : notice;
+        if (isAdminMode) {
+          adminActions.classList.remove('hidden');
+          addBtnWrapper.classList.add('hidden');
+        } else {
+          adminActions.classList.add('hidden');
+          addBtnWrapper.classList.add('hidden');
+        }
+      } else {
+        banner.classList.add('hidden');
+        if (isAdminMode) {
+          addBtnWrapper.classList.remove('hidden');
+          if (addBtnText) {
+            addBtnText.innerText = `${selectedDateKey} 뉴젠홀 장소 이용 공지 등록`;
+          }
+        } else {
+          addBtnWrapper.classList.add('hidden');
+        }
+      }
+    }
+
+    function renderAdminNoticeList() {
+      const container = document.getElementById('adminNoticeListContainer');
+      if (!container) return;
+      container.innerHTML = '';
+
+      const notices = schedulerConfig.dateNotices || {};
+      const dateKeys = Object.keys(notices).sort();
+
+      if (dateKeys.length === 0) {
+        container.innerHTML = '<div class="text-slate-400 text-center py-2 text-[11px]">등록된 장소 이용 공지가 없습니다.</div>';
+        return;
+      }
+
+      dateKeys.forEach(dk => {
+        const n = notices[dk];
+        const text = typeof n === 'object' ? n.text : n;
+        const row = document.createElement('div');
+        row.className = 'bg-white p-2 rounded-lg border border-slate-200 text-xs flex items-start justify-between gap-2';
+        row.innerHTML = `
+          <div class="min-w-0">
+            <span class="font-bold text-amber-900">${dk}</span>
+            <p class="text-[11px] text-slate-700 line-clamp-2 mt-0.5">${escapeHtml(text)}</p>
+          </div>
+          <div class="flex items-center space-x-1 shrink-0">
+            <button onclick="openDateNoticeModal('${dk}')" class="text-[10px] bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded border border-amber-200">수정</button>
+            <button onclick="deleteDateNotice('${dk}')" class="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-1.5 py-0.5 rounded border border-rose-200">삭제</button>
+          </div>
         `;
         container.appendChild(row);
       });
@@ -2133,6 +2377,7 @@
           document.getElementById('adminBadgeText').innerText = '관리자 활성';
           document.getElementById('adminModeBtn').className = "px-2 py-1 text-[11px] font-extrabold rounded-lg bg-amber-500 text-white hover:bg-amber-600 transition touch-bounce whitespace-nowrap";
           renderTimeSlots();
+          renderDateNoticeUI();
           showToast('교역자/간사 관리자 모드로 전환되었습니다.', '🛡️');
         } else if (pin !== null) {
           alert('비밀번호가 올바르지 않습니다.');
@@ -2146,6 +2391,7 @@
       document.getElementById('adminBadgeText').innerText = '성도 모드';
       document.getElementById('adminModeBtn').className = "px-2 py-1 text-[11px] font-extrabold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition touch-bounce whitespace-nowrap";
       renderTimeSlots();
+      renderDateNoticeUI();
       showToast('성도 모드로 복귀했습니다.', '👤');
     }
 
