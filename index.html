@@ -182,8 +182,16 @@
 
       <!-- 2. 가로 슬라이더 뷰 -->
       <div id="sliderViewContainer" class="hidden space-y-2">
-        <div id="dateScrollContainer" class="flex space-x-2 overflow-x-auto pb-1 hide-scrollbar scroll-smooth">
-          <!-- JS로 기도일 칩 생성 -->
+        <div class="relative flex items-center">
+          <button onclick="scrollDateChips(-200)" class="shrink-0 mr-1.5 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-xs flex items-center justify-center text-[10px] font-black transition touch-bounce" title="이전 날짜 보기">
+            ◀
+          </button>
+          <div id="dateScrollContainer" class="flex-1 flex space-x-2 overflow-x-auto pb-1 hide-scrollbar scroll-smooth">
+            <!-- JS로 기도일 칩 생성 -->
+          </div>
+          <button onclick="scrollDateChips(200)" class="shrink-0 ml-1.5 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 shadow-xs flex items-center justify-center text-[10px] font-black transition touch-bounce" title="다음 날짜 보기">
+            ▶
+          </button>
         </div>
       </div>
     </div>
@@ -250,14 +258,27 @@
       </div>
     </div>
 
-    <!-- 시간대 빠른 필터 탭 -->
-    <div id="timeFilterSection" class="flex items-center space-x-1.5 overflow-x-auto pb-1 hide-scrollbar text-xs font-semibold text-slate-500">
-      <button onclick="setTimeFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition">전체 24h</button>
-      <button onclick="setTimeFilter('dawn')" id="filter-dawn" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">🌙 새벽 (00-06)</button>
-      <button onclick="setTimeFilter('morning')" id="filter-morning" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">☀️ 오전 (06-12)</button>
-      <button onclick="setTimeFilter('afternoon')" id="filter-afternoon" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">🌤️ 오후 (12-18)</button>
-      <button onclick="setTimeFilter('evening')" id="filter-evening" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition">✨ 저녁 (18-24)</button>
-      <button onclick="setTimeFilter('empty')" id="filter-empty" class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-bold shrink-0 transition">⚠️ 공백만 보기</button>
+    <!-- 시간대 빠른 필터 탭 (좌우 넘김 버튼 추가) -->
+    <div id="timeFilterSectionWrapper" class="relative flex items-center">
+      <!-- 좌측 스크롤 버튼 -->
+      <button onclick="scrollTimeFilter(-160)" class="shrink-0 mr-1.5 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-xs flex items-center justify-center text-[10px] font-black transition touch-bounce" title="이전 필터 보기">
+        ◀
+      </button>
+
+      <!-- 필터 버튼 목록 (가로 스크롤) -->
+      <div id="timeFilterSection" class="flex-1 flex items-center space-x-1.5 overflow-x-auto pb-0.5 hide-scrollbar scroll-smooth text-xs font-semibold text-slate-500">
+        <button onclick="setTimeFilter('all')" id="filter-all" class="px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition shadow-xs whitespace-nowrap">전체 24h</button>
+        <button onclick="setTimeFilter('dawn')" id="filter-dawn" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition whitespace-nowrap">🌙 새벽 (00-06)</button>
+        <button onclick="setTimeFilter('morning')" id="filter-morning" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition whitespace-nowrap">☀️ 오전 (06-12)</button>
+        <button onclick="setTimeFilter('afternoon')" id="filter-afternoon" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition whitespace-nowrap">🌤️ 오후 (12-18)</button>
+        <button onclick="setTimeFilter('evening')" id="filter-evening" class="px-3 py-1.5 rounded-full bg-white border border-slate-200 hover:bg-slate-100 shrink-0 transition whitespace-nowrap">✨ 저녁 (18-24)</button>
+        <button onclick="setTimeFilter('empty')" id="filter-empty" class="px-3 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-700 font-bold shrink-0 transition whitespace-nowrap">⚠️ 공백만 보기</button>
+      </div>
+
+      <!-- 우측 스크롤 버튼 -->
+      <button onclick="scrollTimeFilter(160)" class="shrink-0 ml-1.5 w-7 h-7 rounded-full bg-white border border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200 shadow-xs flex items-center justify-center text-[10px] font-black transition touch-bounce" title="다음 필터 보기">
+        ▶
+      </button>
     </div>
 
     <!-- 24시간 타임테이블 리스트 -->
@@ -1179,7 +1200,7 @@
       const progressBarContainer = document.getElementById('progressBarContainer');
       const summaryStatsRight = document.getElementById('summaryStatsRight');
       const blackoutNoticeBox = document.getElementById('blackoutNoticeBox');
-      const timeFilterSection = document.getElementById('timeFilterSection');
+      const timeFilterSection = document.getElementById('timeFilterSectionWrapper') || document.getElementById('timeFilterSection');
 
       if (todayTagBadge) {
         if (isToday) {
@@ -2056,18 +2077,38 @@
       }
     }
 
+    function scrollTimeFilter(delta) {
+      const el = document.getElementById('timeFilterSection');
+      if (el) {
+        el.scrollBy({ left: delta, behavior: 'smooth' });
+      }
+    }
+
+    function scrollDateChips(delta) {
+      const el = document.getElementById('dateScrollContainer');
+      if (el) {
+        el.scrollBy({ left: delta, behavior: 'smooth' });
+      }
+    }
+
     function setTimeFilter(filter) {
       currentTimeFilter = filter;
       ['all', 'dawn', 'morning', 'afternoon', 'evening', 'empty'].forEach(f => {
         const btn = document.getElementById(`filter-${f}`);
         if (btn) {
           if (f === filter) {
-            btn.className = "px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition shadow-xs";
+            btn.className = "px-3 py-1.5 rounded-full bg-indigo-600 text-white font-bold shrink-0 transition shadow-xs whitespace-nowrap";
           } else {
-            btn.className = "px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 shrink-0 transition";
+            btn.className = "px-3 py-1.5 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 shrink-0 transition whitespace-nowrap";
           }
         }
       });
+
+      const activeBtn = document.getElementById(`filter-${filter}`);
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }
+
       renderTimeSlots();
     }
 
