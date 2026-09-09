@@ -555,15 +555,15 @@
             <span id="currentGeneratedRangeText" class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-bold">~ 계산 중...</span>
           </div>
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            • 25순번이 끝나면 <strong>다음 차수(7차, 8차, 9차...)로 무한 자동 순환</strong>됩니다.<br>
-            • 다음 회차를 추가하거나 일정을 더 길게 확장하려면 아래 버튼을 누르세요.
+            • 현재 <strong>6차 순환</strong>까지만 등록되어 있습니다.<br>
+            • 다음 차수(7차, 8차...)를 이어서 추가하거나 일정을 연장하려면 아래 버튼을 누르세요.
           </p>
           <div class="grid grid-cols-2 gap-2 pt-1">
             <button onclick="extendScheduleDays(30)" class="py-2.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs touch-bounce flex items-center justify-center space-x-1">
-              <span>➕</span> <span>다음 1회차(+30일) 추가</span>
+              <span>➕</span> <span>다음 회차 추가</span>
             </button>
-            <button onclick="extendScheduleDays(180)" class="py-2.5 px-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 text-xs touch-bounce flex items-center justify-center space-x-1">
-              <span>🗓️</span> <span>반기(+180일) 대폭 확장</span>
+            <button onclick="resetToRound6()" class="py-2.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 text-xs touch-bounce flex items-center justify-center space-x-1">
+              <span>🗑️</span> <span>7차 이후 일정 삭제</span>
             </button>
           </div>
         </div>
@@ -1092,7 +1092,8 @@
       startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
       startDayNum: 134,        // 134일차
       startRound: 6,           // 6차 순환부터 시작
-      totalDays: 365,          // 1년 분량 넉넉하게 자동 생성 (18차 순환까지)
+      maxRound: 6,             // 6차 순환까지만 등록 (7차부터 일정 삭제)
+      totalDays: 365,          // 1년 분량 달력 그리드 지원
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
       excludeHoliday: true,    // 🇰🇷 대한민국 공휴일 및 대체공휴일 쉼 (자동 건너뜀)
@@ -1236,6 +1237,28 @@
             const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
             const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
             const round = Math.floor(leaderIdx / qLength) + startRound;
+            const maxRound = (schedulerConfig.maxRound !== undefined && schedulerConfig.maxRound !== null) ? Number(schedulerConfig.maxRound) : 6;
+
+            if (maxRound !== null && round > maxRound) {
+              // ⭐️ 6차 순환 종료 후 (7차 순환부터는 아직 미등록 상태)
+              const item = {
+                isPrayerDay: false,
+                dateKey: dateKey,
+                year: y,
+                month: m,
+                day: d,
+                dayOfWeek: dayOfWeek,
+                date: displayDate,
+                reason: '일정 없음',
+                isHoliday: isHolidayDate,
+                holidayName: holidayName,
+                isBlackout: isBlackout,
+                blackoutName: blackoutName
+              };
+              calendarDaysMap[dateKey] = item;
+              current.setDate(current.getDate() + 1);
+              continue;
+            }
 
             const item = {
               isPrayerDay: true,
@@ -1277,6 +1300,10 @@
 
       if (!cfg.startRound) {
         cfg.startRound = 6;
+        modified = true;
+      }
+      if (cfg.maxRound === undefined) {
+        cfg.maxRound = 6;
         modified = true;
       }
       if (!cfg.totalDays || cfg.totalDays < 365) {
@@ -1397,6 +1424,18 @@
             ]
           }
         };
+        savePrayerData();
+      }
+
+      // 7차 순환(159일차) 이후 등록된 기도 데이터 자동 정리
+      let prayerDataCleaned = false;
+      Object.keys(prayerData).forEach(d => {
+        if (parseInt(d, 10) >= 159) {
+          delete prayerData[d];
+          prayerDataCleaned = true;
+        }
+      });
+      if (prayerDataCleaned) {
         savePrayerData();
       }
 
@@ -1653,7 +1692,7 @@
               </div>
               <div class="h-0.5"></div>
             `;
-          } else {
+          } else if (isSunday) {
             // 주일예배 (가운데 주일예배만 깔끔하게 표시)
             cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-slate-100/80 border-slate-200 text-slate-400 ${dimClass} ${selectRing}`;
             cell.onclick = () => selectDateKey(dateKey);
@@ -1665,6 +1704,22 @@
               <div class="my-auto text-center">
                 <div class="text-[10px] font-extrabold tracking-tight text-slate-400">
                   ${item.reason || '주일예배'}
+                </div>
+              </div>
+              <div class="h-0.5"></div>
+            `;
+          } else {
+            // ⭐️ 릴레이 기도 일정 미등록일 (6차 순환 종료 후 대기 일자)
+            cell.className = `h-[64px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-slate-50/60 border-slate-200/50 text-slate-400 ${dimClass} ${selectRing}`;
+            cell.onclick = () => selectDateKey(dateKey);
+
+            cell.innerHTML = `
+              <div class="flex items-center justify-start w-full overflow-hidden leading-none">
+                <span class="font-black text-[11px] ${dayNumColor}">${day}</span>
+              </div>
+              <div class="my-auto text-center">
+                <div class="text-[9.5px] font-bold tracking-tight text-slate-300">
+                  -
                 </div>
               </div>
               <div class="h-0.5"></div>
@@ -1966,9 +2021,14 @@
         const blackoutName = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey]) || (item && item.blackoutName) || (item && item.reason) || '교회 행사';
         const isDual = (isHoliday && isBlackout);
 
-        const m = selectedDateKey.split('-')[1];
-        const d = selectedDateKey.split('-')[2];
-        dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 (${item ? item.date.split(' ')[1].replace(/[()]/g, '') : ''})`;
+        const dateParts = selectedDateKey.split('-');
+        const selYear = parseInt(dateParts[0], 10);
+        const selMonth = parseInt(dateParts[1], 10);
+        const selDay = parseInt(dateParts[2], 10);
+        const selDayOfWeek = new Date(selYear, selMonth - 1, selDay).getDay();
+        const isSunday = (selDayOfWeek === 0);
+        const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        dateText.innerText = `${selMonth}월 ${selDay}일 (${dayNames[selDayOfWeek]})`;
 
         if (isDual) {
           dayTag.innerText = "공휴일 & 행사 쉼";
@@ -1997,7 +2057,7 @@
           leaderRoleBadge.innerText = "행사로 기도일 건너뜀";
           document.getElementById('blackoutNoticeTitle').innerText = `${blackoutName} - 릴레이 기도 쉼`;
           document.getElementById('blackoutNoticeDesc').innerText = `특별 행사 [${blackoutName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 착착 밀렸습니다.`;
-        } else {
+        } else if (isSunday) {
           dayTag.innerText = "주일 쉼";
           dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-slate-100 text-slate-700 border border-slate-200";
           roundBadge.innerText = "주일 쉼";
@@ -2006,6 +2066,15 @@
           leaderRoleBadge.innerText = "주일 정기 예배";
           document.getElementById('blackoutNoticeTitle').innerText = "주일예배 - 릴레이 기도 쉼";
           document.getElementById('blackoutNoticeDesc').innerText = "주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.";
+        } else {
+          dayTag.innerText = "일정 없음";
+          dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-slate-100 text-slate-500 border border-slate-200";
+          roundBadge.innerText = "일정 미등록";
+          leaderText.innerText = "등록된 기도 일정 없음";
+          leaderRoleBadge.className = "text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200";
+          leaderRoleBadge.innerText = "차수 미정";
+          document.getElementById('blackoutNoticeTitle').innerText = "등록된 릴레이 기도가 없습니다";
+          document.getElementById('blackoutNoticeDesc').innerText = "해당 일자는 아직 릴레이 기도 일정이 배정되지 않았습니다. (현재 6차 순환까지 등록 완료)";
         }
 
         const actionArea = document.getElementById('blackoutActionArea');
@@ -3219,11 +3288,15 @@
       if (!rangeBadge) return;
       if (prayerDaysList.length > 0) {
         const last = prayerDaysList[prayerDaysList.length - 1];
-        rangeBadge.innerText = `~ ${last.year}년 ${last.month}월 ${last.day}일 (${last.round}차)`;
+        rangeBadge.innerText = `~ ${last.year}년 ${last.month}월 ${last.day}일 (${last.round}차 순환)`;
+      } else {
+        rangeBadge.innerText = '등록된 일정 없음';
       }
     }
 
     function extendScheduleDays(days) {
+      if (!schedulerConfig.maxRound || schedulerConfig.maxRound < 6) schedulerConfig.maxRound = 6;
+      schedulerConfig.maxRound += 1;
       if (!schedulerConfig.totalDays) schedulerConfig.totalDays = 365;
       schedulerConfig.totalDays += days;
       saveConfigData();
@@ -3233,7 +3306,24 @@
       renderDaySummary();
       renderTimeSlots();
       renderScheduleRangeUI();
-      showToast(`일정이 ${days}일 연장되어 다음 회차가 생성되었습니다!`, '📅');
+      showToast(`일정이 연장되어 ${schedulerConfig.maxRound}차 순환이 생성되었습니다!`, '📅');
+    }
+
+    function resetToRound6() {
+      if (!confirm('정말로 7차 이후 등록된 일정을 모두 삭제하고 6차 순환까지만 유지하시겠습니까?')) return;
+      schedulerConfig.maxRound = 6;
+      Object.keys(prayerData).forEach(d => {
+        if (parseInt(d, 10) >= 159) delete prayerData[d];
+      });
+      savePrayerData();
+      saveConfigData();
+      generateDynamicSchedule();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+      renderScheduleRangeUI();
+      showToast('7차 이후 일정이 삭제되고 6차 순환까지만 남겼습니다.', '🗑️');
     }
 
     // ========================================================
@@ -3943,6 +4033,7 @@
         if (bookings) {
           const newPrayerData = {};
           bookings.forEach(b => {
+            if (parseInt(b.day_num, 10) >= 159) return;
             const dStr = b.day_num.toString();
             const hStr = b.hour.toString();
             if (!newPrayerData[dStr]) newPrayerData[dStr] = {};
@@ -4004,6 +4095,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_bookings' }, (payload) => {
           const { eventType, new: newRec, old: oldRec } = payload;
           if (eventType === 'INSERT') {
+            if (parseInt(newRec.day_num, 10) >= 159) return;
             const dStr = newRec.day_num.toString();
             const hStr = newRec.hour.toString();
             if (!prayerData[dStr]) prayerData[dStr] = {};
