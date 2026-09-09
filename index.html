@@ -458,7 +458,29 @@
           </div>
         </div>
 
-        <!-- 4) 기본 요일 쉼 설정 옵션 -->
+        <!-- 4) 📅 릴레이 일정 생성 범위 및 다음 회차 연장 -->
+        <div class="border-t border-slate-100 pt-3 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-800 flex items-center space-x-1">
+              <span>📅</span> <span>다음 회차 생성 & 일정 기간 연장</span>
+            </span>
+            <span id="currentGeneratedRangeText" class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-bold">~ 계산 중...</span>
+          </div>
+          <p class="text-[11px] text-slate-500 leading-relaxed">
+            • 25순번이 끝나면 <strong>다음 차수(7차, 8차, 9차...)로 무한 자동 순환</strong>됩니다.<br>
+            • 다음 회차를 추가하거나 일정을 더 길게 확장하려면 아래 버튼을 누르세요.
+          </p>
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="extendScheduleDays(30)" class="py-2.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs touch-bounce flex items-center justify-center space-x-1">
+              <span>➕</span> <span>다음 1회차(+30일) 추가</span>
+            </button>
+            <button onclick="extendScheduleDays(180)" class="py-2.5 px-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold rounded-xl border border-purple-200 text-xs touch-bounce flex items-center justify-center space-x-1">
+              <span>🗓️</span> <span>반기(+180일) 대폭 확장</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5) 기본 요일 쉼 설정 옵션 -->
         <div class="border-t border-slate-100 pt-3 flex items-center justify-between text-xs">
           <span class="font-bold text-slate-700">기본 요일 쉼 설정</span>
           <div class="flex items-center space-x-3">
@@ -639,7 +661,7 @@
       startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
       startDayNum: 134,        // 134일차
       startRound: 6,           // 6차 순환부터 시작
-      totalDays: 120,          // 4개월 분량 넉넉하게 생성
+      totalDays: 365,          // 1년 분량 넉넉하게 자동 생성 (18차 순환까지)
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
       leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
@@ -779,7 +801,7 @@
           startDate: "2026-08-18",
           startDayNum: 134,
           startRound: 6,
-          totalDays: 120,
+          totalDays: 365,
           excludeFriday: false,
           excludeSunday: true,
           leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
@@ -790,6 +812,12 @@
 
       if (schedulerConfig && !schedulerConfig.startRound) {
         schedulerConfig.startRound = 6;
+      }
+
+      // 1년치(365일) 미만으로 저장되어 있던 기존 설정 자동 확장 (2027년 8월 18차 순환까지)
+      if (schedulerConfig && (!schedulerConfig.totalDays || schedulerConfig.totalDays < 365)) {
+        schedulerConfig.totalDays = 365;
+        saveConfigData();
       }
 
       // 리더 역할 동기화 (유정심 리더 및 어른 리더 -> 리더 전환) 및 최순호 추가
@@ -1594,6 +1622,7 @@
     function openShiftManagerModal() {
       renderBlackoutList();
       renderLeaderQueueUI();
+      renderScheduleRangeUI();
 
       document.getElementById('inputEventStartDate').value = selectedDateKey;
       document.getElementById('inputEventEndDate').value = '';
@@ -1862,6 +1891,28 @@
       }
 
       showToast(`요일 쉼 설정이 변경되었습니다.`, '⚙️');
+    }
+
+    function renderScheduleRangeUI() {
+      const rangeBadge = document.getElementById('currentGeneratedRangeText');
+      if (!rangeBadge) return;
+      if (prayerDaysList.length > 0) {
+        const last = prayerDaysList[prayerDaysList.length - 1];
+        rangeBadge.innerText = `~ ${last.year}년 ${last.month}월 ${last.day}일 (${last.round}차)`;
+      }
+    }
+
+    function extendScheduleDays(days) {
+      if (!schedulerConfig.totalDays) schedulerConfig.totalDays = 365;
+      schedulerConfig.totalDays += days;
+      saveConfigData();
+      generateDynamicSchedule();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+      renderScheduleRangeUI();
+      showToast(`일정이 ${days}일 연장되어 다음 회차가 생성되었습니다!`, '📅');
     }
 
     // ========================================================
