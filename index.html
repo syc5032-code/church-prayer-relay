@@ -1536,28 +1536,31 @@
         const card = document.createElement('div');
         card.className = `p-3.5 rounded-2xl border transition-all ${
           isCovered 
-            ? 'bg-white border-slate-200/90 shadow-xs' 
+            ? 'bg-indigo-50/20 border-indigo-200/90 shadow-xs' 
             : 'bg-amber-50/40 border-dashed border-amber-300'
         }`;
 
         let participantsHtml = '';
         if (isCovered) {
           participantsHtml = `
-            <div class="mt-2 space-y-1.5">
+            <div class="mt-2.5 space-y-1.5">
               ${list.map(p => `
-                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100 text-xs">
-                  <div class="flex items-center space-x-2">
-                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-[11px]">
+                <div class="flex items-center justify-between bg-white p-2.5 rounded-xl border border-indigo-200/80 shadow-2xs">
+                  <div class="flex items-center space-x-2.5 min-w-0">
+                    <span class="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-indigo-500 text-white flex items-center justify-center font-black text-xs shadow-xs shrink-0">
                       ${escapeHtml(p.name.charAt(0))}
                     </span>
-                    <div>
-                      <div class="flex items-center space-x-1.5">
-                        <span class="font-bold text-slate-900">${escapeHtml(p.name)}</span>
-                        <span class="text-[10px] bg-slate-200/80 text-slate-700 px-1.5 py-0.2 rounded font-medium">${escapeHtml(p.cell)}</span>
-                      </div>
+                    <div class="flex items-center space-x-2 flex-wrap gap-y-0.5 min-w-0">
+                      <span class="text-sm font-black text-slate-900 tracking-tight">${escapeHtml(p.name)}</span>
+                      <span class="text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5 rounded-md shrink-0">
+                        ${escapeHtml(p.cell)}
+                      </span>
+                      <span class="inline-flex items-center space-x-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shrink-0">
+                        <span>🙏</span> <span>기도자</span>
+                      </span>
                     </div>
                   </div>
-                  <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-slate-400 hover:text-rose-600 text-[11px] p-1 touch-bounce font-medium">
+                  <button onclick="promptCancelBooking('${item.dayNum}', '${h}', '${p.id}', '${escapeHtml(p.name)}')" class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg text-xs font-semibold transition touch-bounce shrink-0 ml-1">
                     취소
                   </button>
                 </div>
@@ -1579,12 +1582,16 @@
               ${timeCategoryTag}
             </div>
             <div class="flex items-center space-x-2">
-              <span class="text-xs font-bold ${isCovered ? 'text-indigo-600' : 'text-amber-600'}">
-                ${list.length > 0 ? `${list.length}명 참여 중` : '공백'}
+              <span class="text-xs font-black ${
+                isCovered 
+                  ? 'text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-2 py-0.5 rounded-full flex items-center space-x-1' 
+                  : 'text-amber-600 font-bold'
+              }">
+                ${isCovered ? `<span class="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0"></span><span>${list.length}명 참여 중</span>` : '공백'}
               </span>
               <button onclick="openBookingModal(${h})" class="px-2.5 py-1 text-xs font-bold rounded-lg ${
                 isCovered 
-                  ? 'bg-slate-100 hover:bg-slate-200 text-slate-700' 
+                  ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200' 
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
               } touch-bounce transition flex items-center space-x-1">
                 <span>+ 참여</span>
