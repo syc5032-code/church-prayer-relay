@@ -908,6 +908,78 @@
     </div>
   </div>
 
+  <!-- 8. 공휴일 릴레이 기도 배정 방식 선택 모달 (관리자 전용) -->
+  <div id="holidayPrayerModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white w-full max-w-sm rounded-3xl p-5 shadow-2xl flex flex-col relative overflow-hidden">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+        <div class="flex items-center space-x-1.5 min-w-0">
+          <span class="text-lg">🇰🇷</span>
+          <div>
+            <span class="text-[10px] font-bold text-rose-600 uppercase tracking-wide">교역자 / 관리자 전용</span>
+            <h3 class="text-sm font-black text-slate-900 truncate" id="holidayModalTitle">공휴일 릴레이 기도 설정</h3>
+          </div>
+        </div>
+        <button onclick="closeHolidayPrayerModal()" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">✕</button>
+      </div>
+
+      <p class="text-xs text-slate-600 mt-2.5 leading-relaxed">
+        해당 공휴일에 기도를 진행할 때, <strong>기존 일정의 배정 방식</strong>을 선택해주세요.
+      </p>
+
+      <!-- 2가지 옵션 라디오/선택 카드 -->
+      <div class="space-y-2 mt-3">
+        <!-- 옵션 1: 특별 별도 기도일 추가 (기존 순번 불변) -->
+        <label id="holidayOptStandaloneCard" class="block p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-50/60 cursor-pointer transition">
+          <div class="flex items-start space-x-2.5">
+            <input type="radio" name="holidayModeRadio" value="standalone" checked class="mt-0.5 text-indigo-600 focus:ring-indigo-500" onchange="updateHolidayModalFields()">
+            <div class="min-w-0 text-xs">
+              <div class="flex items-center space-x-1.5">
+                <span class="font-black text-indigo-950">✨ 독립 특별 기도일 추가</span>
+                <span class="text-[9px] bg-indigo-100 text-indigo-800 font-extrabold px-1.5 py-0.2 rounded border border-indigo-200">추천</span>
+              </div>
+              <p class="text-[11px] text-indigo-900/80 mt-1 leading-snug">
+                기존 순번 리더들의 배정 날짜는 <strong>전혀 밀리지 않고 그대로 유지</strong>되며, 이 공휴일만 단독 특별 기도로 24시간 오픈합니다.
+              </p>
+            </div>
+          </div>
+        </label>
+
+        <!-- 옵션 2: 정규 순환 릴레이 편입 (뒷 일정 연쇄 밀림) -->
+        <label id="holidayOptShiftCard" class="block p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition">
+          <div class="flex items-start space-x-2.5">
+            <input type="radio" name="holidayModeRadio" value="shift" class="mt-0.5 text-indigo-600 focus:ring-indigo-500" onchange="updateHolidayModalFields()">
+            <div class="min-w-0 text-xs">
+              <div class="flex items-center space-x-1.5">
+                <span class="font-black text-slate-800">🔄 정규 순환 편입 (뒷 일정 밀림)</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1 leading-snug">
+                순환 큐의 다음 리더가 이 공휴일에 정규 배정되며, <strong>이후 모든 기도 일정이 하루씩 뒤로 연쇄 밀림</strong>됩니다.
+              </p>
+            </div>
+          </div>
+        </label>
+      </div>
+
+      <!-- 독립 특별 기도 추가 시 담당 명칭 입력 필드 -->
+      <div id="holidayCustomLeaderArea" class="mt-3 bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+        <label class="block font-bold text-slate-700 text-[11px]">기도 담당 명칭 / 타이틀</label>
+        <input type="text" id="holidayCustomLeaderInput" value="전교인 특별 릴레이기도" placeholder="예: 전교인 특별기도, 청년부 연합 등" class="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-bold text-slate-800">
+        <p class="text-[10px] text-slate-400">성도들에게 보여질 기도 담당자/행사 명칭입니다.</p>
+      </div>
+
+      <!-- 하단 액션 버튼 -->
+      <div class="grid grid-cols-2 gap-2 mt-4 pt-2 border-t border-slate-100">
+        <button onclick="closeHolidayPrayerModal()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition touch-bounce">
+          취소
+        </button>
+        <button onclick="confirmHolidayPrayerOverride()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-xs transition shadow-md touch-bounce">
+          기도일 오픈 확정
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- 알림 토스트 -->
   <div id="toast" class="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white px-4 py-2.5 rounded-full text-xs font-semibold shadow-xl opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-2">
     <span id="toastIcon">✅</span>
@@ -1115,40 +1187,76 @@
           };
           calendarDaysMap[dateKey] = item;
         } else {
-          const qLength = schedulerConfig.leaderQueue.length;
-          const turnInCycle = (leaderIdx % qLength) + 1;
-          const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
-          const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
-          const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
-          const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
-          const round = Math.floor(leaderIdx / qLength) + startRound;
-
           const isHolidayDate = !!(KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]);
           const holidayName = isHolidayDate ? KOREAN_HOLIDAYS[dateKey] : '';
+          const isStandalone = isHolidayDate && isHolidayOpen && (
+            (typeof isHolidayOpen === 'object' && isHolidayOpen.type === 'standalone') ||
+            (typeof isHolidayOpen === 'string' && isHolidayOpen !== 'shift') ||
+            (isHolidayOpen === true) // 기본값은 안전하게 독립 특별기도로 처리하여 기존 순번 보존
+          );
 
-          const item = {
-            isPrayerDay: true,
-            isHoliday: isHolidayDate,
-            holidayName: holidayName,
-            dateKey: dateKey,
-            year: y,
-            month: m,
-            day: d,
-            dayOfWeek: dayOfWeek,
-            dayNum: dayNum,
-            date: displayDate,
-            leader: leaderName,
-            role: leaderRole,
-            round: round,
-            turnInCycle: turnInCycle,
-            totalInCycle: qLength
-          };
+          if (isStandalone) {
+            // [방식 B: 독립 특별 기도일 추가 (기존 순번/일정 불변!)]
+            const customLeader = (typeof isHolidayOpen === 'object' && isHolidayOpen.leader) ? isHolidayOpen.leader : '전교인 특별 릴레이기도';
+            const specialDayNum = y * 10000 + m * 100 + d;
 
-          calendarDaysMap[dateKey] = item;
-          prayerDaysList.push(item);
+            const item = {
+              isPrayerDay: true,
+              isHoliday: true,
+              isStandaloneSpecial: true,
+              holidayName: holidayName,
+              dateKey: dateKey,
+              year: y,
+              month: m,
+              day: d,
+              dayOfWeek: dayOfWeek,
+              dayNum: specialDayNum,
+              date: displayDate,
+              leader: customLeader,
+              role: '특별릴레이',
+              round: '특별',
+              turnInCycle: 0,
+              totalInCycle: 0
+            };
 
-          leaderIdx++;
-          dayNum++;
+            calendarDaysMap[dateKey] = item;
+            prayerDaysList.push(item);
+            // ⭐️ leaderIdx와 dayNum을 증가시키지 않아 뒷 일정이 그대로 유지됨!
+          } else {
+            // [방식 A: 정규 릴레이 순환 편입 (뒷 일정 연쇄 밀림)]
+            const qLength = schedulerConfig.leaderQueue.length;
+            const turnInCycle = (leaderIdx % qLength) + 1;
+            const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
+            const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
+            const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
+            const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
+            const round = Math.floor(leaderIdx / qLength) + startRound;
+
+            const item = {
+              isPrayerDay: true,
+              isHoliday: isHolidayDate,
+              isStandaloneSpecial: false,
+              holidayName: holidayName,
+              dateKey: dateKey,
+              year: y,
+              month: m,
+              day: d,
+              dayOfWeek: dayOfWeek,
+              dayNum: dayNum,
+              date: displayDate,
+              leader: leaderName,
+              role: leaderRole,
+              round: round,
+              turnInCycle: turnInCycle,
+              totalInCycle: qLength
+            };
+
+            calendarDaysMap[dateKey] = item;
+            prayerDaysList.push(item);
+
+            leaderIdx++;
+            dayNum++;
+          }
         }
 
         current.setDate(current.getDate() + 1);
@@ -1435,13 +1543,15 @@
 
           const hasNotice = (schedulerConfig.dateNotices && schedulerConfig.dateNotices[dateKey]);
           cell.onclick = () => selectDateKey(dateKey);
-          cell.title = `${item.date} (${item.dayNum}일차) · ${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle}번째 (${item.leader})${hasNotice ? ' · [📢 뉴젠홀 장소 공지]' : ''}`;
+          cell.title = item.isStandaloneSpecial
+            ? `${item.date} [특별 기도일] (${item.leader})${hasNotice ? ' · [📢 뉴젠홀 장소 공지]' : ''}`
+            : `${item.date} (${item.dayNum}일차) · ${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle}번째 (${item.leader})${hasNotice ? ' · [📢 뉴젠홀 장소 공지]' : ''}`;
 
           cell.innerHTML = `
             <div class="flex items-center justify-between w-full overflow-hidden leading-none">
               <div class="flex items-center space-x-1 min-w-0 overflow-hidden">
                 ${dayLabelHtml}
-                ${item.isHoliday ? '<span class="text-[7.5px] font-extrabold bg-rose-100 text-rose-700 px-1 py-0.2 rounded shrink-0">휴일</span>' : ''}
+                ${item.isHoliday ? `<span class="text-[7.5px] font-extrabold bg-rose-100 text-rose-700 px-1 py-0.2 rounded shrink-0">${item.isStandaloneSpecial ? '특별' : '휴일'}</span>` : ''}
               </div>
               <span class="flex items-center space-x-0.5 shrink-0">
                 ${hasNotice ? '<span class="text-[8px] animate-pulse" title="뉴젠홀 장소 공지">📢</span>' : ''}
@@ -1449,7 +1559,7 @@
                   isMatch
                     ? (isSelected ? 'text-indigo-200' : 'text-indigo-700 font-black')
                     : (isToday ? (isSelected ? 'text-rose-700' : 'text-rose-600') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
-                }">${item.dayNum}d</span>
+                }">${item.isStandaloneSpecial ? '특별' : item.dayNum + 'd'}</span>
               </span>
             </div>
             <div class="text-center py-0.5">
@@ -1726,18 +1836,21 @@
           }`;
         }
 
+        const chipDayLabel = item.isStandaloneSpecial ? '특별' : `${item.dayNum}일차`;
+        const chipRoundLabel = item.isStandaloneSpecial ? '(특별)' : `(${item.round}차-${item.turnInCycle})`;
+
         btn.innerHTML = `
           <div class="flex items-center space-x-1">
             <span class="text-[10px] font-bold ${
               isToday 
                 ? (isSelected ? 'text-rose-700 font-black' : 'text-rose-600 font-bold') 
                 : (isSelected ? 'text-indigo-200' : 'text-slate-400')
-            }">${item.dayNum}일차</span>
+            }">${chipDayLabel}</span>
             <span class="text-[9px] font-extrabold ${
               isToday 
                 ? (isSelected ? 'text-rose-800' : 'text-rose-600') 
                 : (isSelected ? 'text-indigo-100' : 'text-purple-600')
-            }">(${item.round}차-${item.turnInCycle})</span>
+            }">${chipRoundLabel}</span>
           </div>
           <span class="text-xs font-black mt-0.5 ${
             isToday 
@@ -1849,12 +1962,15 @@
 
         const actionArea = document.getElementById('blackoutActionArea');
         if (actionArea) {
-          if (isHoliday) {
+          if (isHoliday && isAdminMode) {
             actionArea.innerHTML = `
               <div class="flex items-center justify-between flex-wrap gap-2">
-                <span class="text-[11px] font-bold text-rose-800">💡 이 공휴일에 릴레이 기도를 진행하시겠습니까?</span>
-                <button onclick="toggleHolidayOverride('${selectedDateKey}')" class="px-2.5 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs touch-bounce shadow-xs flex items-center space-x-1">
-                  <span>✨</span> <span>이 공휴일 기도 오픈하기</span>
+                <div class="text-[11px] text-rose-900">
+                  <span class="font-black text-rose-950">⚡ 교역자/관리자 전용:</span>
+                  <span class="text-rose-800 ml-1">이 공휴일에 릴레이 기도를 오픈하시겠습니까?</span>
+                </div>
+                <button onclick="openHolidayPrayerModal('${selectedDateKey}')" class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-xs touch-bounce shadow-sm flex items-center space-x-1.5 transition">
+                  <span>✨</span> <span>공휴일 기도 오픈 설정</span>
                 </button>
               </div>
             `;
@@ -1876,24 +1992,35 @@
       blackoutNoticeBox.classList.add('hidden');
       timeFilterSection.classList.remove('hidden');
 
-      dayTag.innerText = `${item.dayNum}일차`;
-      dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800";
+      if (item.isStandaloneSpecial) {
+        dayTag.innerText = "특별 기도일";
+        dayTag.className = "px-2 py-0.5 text-[11px] font-black rounded-md bg-rose-100 text-rose-900 border border-rose-200";
+      } else {
+        dayTag.innerText = `${item.dayNum}일차`;
+        dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800";
+      }
       
       const m = item.dateKey.split('-')[1];
       const d = item.dateKey.split('-')[2];
       const yoil = item.date.split(' ')[1];
       dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 ${yoil}`;
 
-      roundBadge.innerText = `${item.round}차 순환 (${item.turnInCycle}/${item.totalInCycle || 25}번째)`;
+      roundBadge.innerText = item.isStandaloneSpecial
+        ? "✨ 독립 특별 기도일 (순번 불변)"
+        : `${item.round}차 순환 (${item.turnInCycle}/${item.totalInCycle || 25}번째)`;
       leaderText.innerText = item.leader;
 
       if (item.isHoliday) {
+        const isStandalone = !!item.isStandaloneSpecial;
+        const badgeDesc = isStandalone ? "✨ 특별 기도일" : "🔄 정규 순환";
+        const revertBtn = isAdminMode
+          ? `<button onclick="revertHolidayPrayer('${item.dateKey}')" class="text-[10px] text-rose-700 hover:text-rose-950 font-extrabold underline ml-1.5 bg-rose-200/70 hover:bg-rose-300 px-1.5 py-0.5 rounded transition" title="다시 공휴일 쉼으로 전환">다시 쉼 전환</button>`
+          : '';
+
         leaderRoleBadge.className = "text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-200 inline-flex items-center space-x-1";
         leaderRoleBadge.innerHTML = `
-          <span>🇰🇷 ${item.holidayName || '공휴일'} 기도 진행</span>
-          <button onclick="toggleHolidayOverride('${item.dateKey}')" class="text-[10px] text-rose-600 hover:text-rose-900 font-extrabold underline ml-1" title="다시 공휴일 쉼으로 전환">
-            (쉼 전환)
-          </button>
+          <span>🇰🇷 ${item.holidayName || '공휴일'} (${badgeDesc})</span>
+          ${revertBtn}
         `;
       } else {
         leaderRoleBadge.className = "text-xs font-semibold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded";
@@ -2047,7 +2174,10 @@
       currentBookingHour = hour;
       const hourEnd = (hour + 1) % 24;
 
-      document.getElementById('modalDayBadge').innerText = `${item.dayNum}일차 (${item.date}) • ${item.leader} 리더`;
+      const modalBadge = item.isStandaloneSpecial
+        ? `특별 기도일 (${item.date}) • ${item.leader}`
+        : `${item.dayNum}일차 (${item.date}) • ${item.leader} 리더`;
+      document.getElementById('modalDayBadge').innerText = modalBadge;
       document.getElementById('modalHourTitle').innerText = `${String(hour).padStart(2, '0')}:00 ~ ${String(hourEnd).padStart(2, '0')}:00 기도 신청`;
       
       document.getElementById('inputName').value = '';
@@ -2225,9 +2355,14 @@
 
       const pct = Math.round((coveredHours / 24) * 100);
       let text = `[🔥 뉴사운드교회 성전 릴레이기도 현황]\n`;
-      text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
-      const shareRole = (item.role === '군단리더' ? '리더' : item.role) || '리더';
-      text += `👤 담당: ${item.leader} ${shareRole} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
+      if (item.isStandaloneSpecial) {
+        text += `📅 일정: 특별 기도일 (${item.date})\n`;
+        text += `👤 담당: ${item.leader} (특별 릴레이 기도)\n`;
+      } else {
+        text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
+        const shareRole = (item.role === '군단리더' ? '리더' : item.role) || '리더';
+        text += `👤 담당: ${item.leader} ${shareRole} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
+      }
       text += `📊 기도 진행: ${coveredHours}/24시간 (${pct}% 달성)\n`;
       text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
 
@@ -2872,18 +3007,92 @@
       showToast(msg, '⚙️');
     }
 
-    function toggleHolidayOverride(dateKey) {
+    let pendingHolidayDateKey = null;
+
+    function openHolidayPrayerModal(dateKey) {
+      if (!isAdminMode) {
+        showToast('공휴일 기도 설정은 교역자/관리자 전용 기능입니다.', '🔒');
+        return;
+      }
+      pendingHolidayDateKey = dateKey;
+      const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) || '공휴일';
+      const m = parseInt(dateKey.split('-')[1], 10);
+      const d = parseInt(dateKey.split('-')[2], 10);
+
+      const titleEl = document.getElementById('holidayModalTitle');
+      if (titleEl) {
+        titleEl.innerText = `${m}월 ${d}일 [${holidayName}] 기도 오픈`;
+      }
+
+      // 기본 옵션: 독립 특별 기도일 (standalone)
+      const radioStandalone = document.querySelector('input[name="holidayModeRadio"][value="standalone"]');
+      if (radioStandalone) radioStandalone.checked = true;
+      const customInput = document.getElementById('holidayCustomLeaderInput');
+      if (customInput) customInput.value = '전교인 특별 릴레이기도';
+
+      updateHolidayModalFields();
+
+      const modal = document.getElementById('holidayPrayerModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeHolidayPrayerModal() {
+      const modal = document.getElementById('holidayPrayerModal');
+      if (modal) modal.classList.add('hidden');
+      pendingHolidayDateKey = null;
+    }
+
+    function updateHolidayModalFields() {
+      const selectedMode = document.querySelector('input[name="holidayModeRadio"]:checked')?.value || 'standalone';
+      const standaloneCard = document.getElementById('holidayOptStandaloneCard');
+      const shiftCard = document.getElementById('holidayOptShiftCard');
+      const customArea = document.getElementById('holidayCustomLeaderArea');
+
+      if (selectedMode === 'standalone') {
+        if (standaloneCard) {
+          standaloneCard.className = "block p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-50/60 cursor-pointer transition";
+        }
+        if (shiftCard) {
+          shiftCard.className = "block p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition";
+        }
+        if (customArea) customArea.classList.remove('hidden');
+      } else {
+        if (standaloneCard) {
+          standaloneCard.className = "block p-3 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition";
+        }
+        if (shiftCard) {
+          shiftCard.className = "block p-3 rounded-2xl border-2 border-indigo-500 bg-indigo-50/60 cursor-pointer transition";
+        }
+        if (customArea) customArea.classList.add('hidden');
+      }
+    }
+
+    function confirmHolidayPrayerOverride() {
+      if (!isAdminMode) {
+        showToast('교역자/관리자 인증이 필요합니다.', '🔒');
+        return;
+      }
+      if (!pendingHolidayDateKey) return;
+
       if (!schedulerConfig.holidayOverrides) {
         schedulerConfig.holidayOverrides = {};
       }
-      const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) || '공휴일';
 
-      if (schedulerConfig.holidayOverrides[dateKey]) {
-        delete schedulerConfig.holidayOverrides[dateKey];
-        showToast(`[${holidayName}] 릴레이 기도 쉼으로 다시 전환되었습니다.`, '🚫');
+      const selectedMode = document.querySelector('input[name="holidayModeRadio"]:checked')?.value || 'standalone';
+      const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[pendingHolidayDateKey]) || '공휴일';
+
+      if (selectedMode === 'standalone') {
+        const customLeader = document.getElementById('holidayCustomLeaderInput')?.value.trim() || '전교인 특별 릴레이기도';
+        schedulerConfig.holidayOverrides[pendingHolidayDateKey] = {
+          type: 'standalone',
+          leader: customLeader
+        };
+        showToast(`[${holidayName}] 특별 기도일이 오픈되었습니다! (기존 순번 불변) ✨`, '🎉');
       } else {
-        schedulerConfig.holidayOverrides[dateKey] = true;
-        showToast(`[${holidayName}] 릴레이 기도가 오픈되었습니다! 24시간 신청 가능합니다.`, '✨');
+        schedulerConfig.holidayOverrides[pendingHolidayDateKey] = {
+          type: 'shift'
+        };
+        showToast(`[${holidayName}] 정규 순환에 편입되어 이후 일정이 순차 연쇄 밀림되었습니다. 🔄`, '✨');
       }
 
       saveConfigData(true);
@@ -2893,6 +3102,39 @@
       renderDaySummary();
       renderTimeSlots();
       renderOpenedHolidaysList();
+      closeHolidayPrayerModal();
+    }
+
+    function revertHolidayPrayer(dateKey) {
+      if (!isAdminMode) {
+        showToast('공휴일 쉼 전환은 교역자/관리자만 가능합니다.', '🔒');
+        return;
+      }
+      if (!schedulerConfig.holidayOverrides) {
+        schedulerConfig.holidayOverrides = {};
+      }
+      const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) || '공휴일';
+      delete schedulerConfig.holidayOverrides[dateKey];
+      saveConfigData(true);
+      generateDynamicSchedule();
+      renderCalendar();
+      renderDateChips();
+      renderDaySummary();
+      renderTimeSlots();
+      renderOpenedHolidaysList();
+      showToast(`[${holidayName}] 다시 릴레이 기도 쉼으로 전환되었습니다.`, '🚫');
+    }
+
+    function toggleHolidayOverride(dateKey) {
+      if (!isAdminMode) {
+        openAdminAuthModal();
+        return;
+      }
+      if (schedulerConfig.holidayOverrides && schedulerConfig.holidayOverrides[dateKey]) {
+        revertHolidayPrayer(dateKey);
+      } else {
+        openHolidayPrayerModal(dateKey);
+      }
     }
 
     function renderOpenedHolidaysList() {
@@ -2912,10 +3154,13 @@
         const name = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[k]) || '공휴일';
         const m = parseInt(k.split('-')[1], 10);
         const d = parseInt(k.split('-')[2], 10);
+        const override = schedulerConfig.holidayOverrides[k];
+        const isStandalone = (typeof override === 'object' && override.type === 'standalone') || (typeof override === 'string' && override !== 'shift') || (override === true);
+        const typeLabel = isStandalone ? '특별' : '순환';
         return `
-          <span class="inline-flex items-center space-x-1 bg-white border border-rose-200 text-rose-800 text-[10px] px-1.5 py-0.5 rounded-lg font-bold shadow-2xs">
-            <span>${m}/${d} ${name}</span>
-            <button onclick="toggleHolidayOverride('${k}')" class="text-rose-500 hover:text-rose-700 ml-0.5" title="다시 쉼으로 전환">✕</button>
+          <span class="inline-flex items-center space-x-1 bg-white border border-rose-200 text-rose-800 text-[10px] px-2 py-0.5 rounded-lg font-bold shadow-2xs">
+            <span>${m}/${d} ${name} (${typeLabel})</span>
+            <button onclick="revertHolidayPrayer('${k}')" class="text-rose-500 hover:text-rose-800 ml-1 font-extrabold" title="다시 쉼으로 전환">✕</button>
           </span>
         `;
       }).join('');
@@ -3007,6 +3252,7 @@
       document.getElementById('adminModeBtn').className = "px-2 py-1 text-[11px] font-extrabold rounded-lg border border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100 transition touch-bounce whitespace-nowrap";
       renderTimeSlots();
       renderDateNoticeUI();
+      renderDaySummary();
       showToast('성도 모드로 복귀했습니다.', '👤');
     }
 
