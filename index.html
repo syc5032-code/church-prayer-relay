@@ -108,13 +108,7 @@
           </button>
           
           <div class="text-center">
-            <div class="flex items-center justify-center space-x-1.5">
-              <span class="text-base">📅</span>
-              <h2 id="calendarBigMonthTitle" class="text-base font-black text-indigo-950 tracking-tight">2026년 9월</h2>
-            </div>
-            <p id="calendarMonthSubDesc" class="text-[10px] font-bold text-indigo-600 mt-0.5">
-              9월 릴레이 일정 (146일차 ~ 158일차)
-            </p>
+            <h2 id="calendarBigMonthTitle" class="text-base font-black text-indigo-950 tracking-tight">2026년 9월</h2>
           </div>
 
           <button onclick="changeMonth(1)" class="w-8 h-8 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 active:scale-95 flex items-center justify-center font-bold text-xs shadow-xs transition" title="다음 달">
@@ -916,20 +910,7 @@
     // ========================================================
     function renderCalendar() {
       const bigTitle = document.getElementById('calendarBigMonthTitle');
-      const subDesc = document.getElementById('calendarMonthSubDesc');
       if (bigTitle) bigTitle.innerText = `${currentCalendarYear}년 ${currentCalendarMonth}월`;
-      
-      if (subDesc) {
-        const daysInThisMonth = prayerDaysList.filter(item => item.year === currentCalendarYear && item.month === currentCalendarMonth);
-        if (daysInThisMonth.length > 0) {
-          const firstItem = daysInThisMonth[0];
-          const lastItem = daysInThisMonth[daysInThisMonth.length - 1];
-          const uniqueRounds = [...new Set(daysInThisMonth.map(item => `${item.round}차`))].join(' ~ ');
-          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정 (${uniqueRounds} 순환 · ${firstItem.dayNum}일차 ~ ${lastItem.dayNum}일차)`;
-        } else {
-          subDesc.innerText = `${currentCalendarMonth}월 릴레이 일정`;
-        }
-      }
 
       // 오늘 날짜가 아니거나 다른 달을 보고 있을 때만 '오늘로 돌아가기' 버튼 노출
       const returnBanner = document.getElementById('returnToTodayBanner');
