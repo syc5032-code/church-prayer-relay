@@ -153,8 +153,8 @@
 
         <!-- 오늘 날짜가 아닐 때만 노출되는 '오늘 날짜로 돌아가기' 안내 버튼 -->
         <div id="returnToTodayBanner" class="hidden text-center pt-0.5">
-          <button onclick="goToToday()" class="inline-flex items-center space-x-1.5 px-3 py-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 rounded-full text-xs font-bold transition touch-bounce shadow-xs">
-            <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+          <button onclick="goToToday()" class="inline-flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-full text-xs font-bold transition touch-bounce shadow-xs">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span>오늘 날짜 (9월 9일 수요일)로 돌아가기</span>
           </button>
         </div>
@@ -176,13 +176,14 @@
         </div>
 
         <!-- 범례 안내 -->
-        <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 px-1 border-t border-slate-100">
-          <div class="flex items-center space-x-2">
+        <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 px-1 border-t border-slate-100 flex-wrap gap-y-1">
+          <div class="flex items-center space-x-2 flex-wrap gap-y-1">
             <span class="inline-flex items-center"><span class="w-2 h-2 rounded-full bg-indigo-600 mr-1"></span>선택</span>
-            <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded bg-rose-100 border border-rose-300 mr-1"></span>오늘</span>
+            <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded bg-emerald-100 border border-emerald-400 mr-1"></span>오늘</span>
             <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-indigo-50 border border-indigo-200 mr-1"></span>기도일</span>
-            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-slate-100 mr-1"></span>주일</span>
-            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-amber-100 mr-1"></span>행사</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-slate-100 border border-slate-200 mr-1"></span>주일</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-rose-100 border border-rose-300 mr-1"></span>공휴일</span>
+            <span class="inline-flex items-center"><span class="w-2 h-2 rounded bg-amber-100 border border-amber-300 mr-1"></span>행사</span>
           </div>
           <span class="font-bold text-indigo-600">날짜 터치 시 이동</span>
         </div>
@@ -212,7 +213,7 @@
       <!-- 1열: 날짜/일차 & 달성률/기도채움 -->
       <div class="relative z-10 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
-          <span id="curTodayTagBadge" class="hidden text-[10px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded-full animate-pulse shrink-0">오늘</span>
+          <span id="curTodayTagBadge" class="hidden text-[10px] bg-emerald-500 text-white font-black px-2 py-0.5 rounded-full animate-pulse shrink-0">오늘</span>
           <span id="curDayTag" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-indigo-100 text-indigo-800 shrink-0">153일차</span>
           <span id="curDateText" class="text-sm font-extrabold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">9월 9일 (수)</span>
         </div>
@@ -1029,8 +1030,8 @@
       "2026-03-01": "삼일절",
       "2026-03-02": "삼일절 대체공휴일",
       "2026-05-05": "어린이날",
-      "2026-05-24": "부처님오신날",
-      "2026-05-25": "부처님오신날 대체공휴일",
+      "2026-05-24": "석가탄신일",
+      "2026-05-25": "석가탄신일 대체공휴일",
       "2026-06-06": "현충일",
       "2026-08-15": "광복절",
       "2026-08-17": "광복절 대체공휴일",
@@ -1050,7 +1051,7 @@
       "2027-02-09": "설날 대체공휴일",
       "2027-03-01": "삼일절",
       "2027-05-05": "어린이날",
-      "2027-05-13": "부처님오신날",
+      "2027-05-13": "석가탄신일",
       "2027-06-06": "현충일",
       "2027-08-15": "광복절",
       "2027-08-16": "광복절 대체공휴일",
@@ -1070,7 +1071,7 @@
       "2028-01-27": "설날",
       "2028-01-28": "설날 연휴",
       "2028-03-01": "삼일절",
-      "2028-05-02": "부처님오신날",
+      "2028-05-02": "석가탄신일",
       "2028-05-05": "어린이날",
       "2028-06-06": "현충일",
       "2028-08-15": "광복절",
@@ -1495,7 +1496,7 @@
         const isToday = (dateKey === todayKey);
 
         const dayLabelHtml = isToday
-          ? `<span class="font-black text-[11px] ${isSelected ? 'text-rose-700' : 'text-rose-600'}">${day}</span>`
+          ? `<span class="font-black text-[11px] ${isSelected ? 'text-emerald-800' : 'text-emerald-700'}">${day}</span>`
           : `<span class="font-black text-[11px] ${isSelected ? 'text-white' : (isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800'))}">${day}</span>`;
 
         const isFilterActive = (selectedLeaderFilter && selectedLeaderFilter !== 'ALL');
@@ -1516,7 +1517,7 @@
           if (isFilterActive) {
             if (isMatch) {
               if (isToday) {
-                cell.className = `h-[58px] p-1 rounded-xl border-2 border-rose-500 bg-rose-100/90 ring-2 ring-rose-400 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-900`;
+                cell.className = `h-[58px] p-1 rounded-xl border-2 border-emerald-500 bg-emerald-100/90 ring-2 ring-emerald-400 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-slate-900`;
               } else if (isSelected) {
                 cell.className = `h-[58px] p-1 rounded-xl border-2 border-indigo-700 bg-indigo-600 ring-2 ring-indigo-300 ring-offset-1 shadow-md z-10 flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden text-white`;
               } else {
@@ -1529,8 +1530,8 @@
             if (isToday) {
               cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
                 isSelected
-                  ? 'bg-rose-100/90 border-rose-400 ring-2 ring-rose-500 shadow-md z-10 text-slate-900'
-                  : 'bg-rose-50/90 border-rose-200 hover:bg-rose-100 text-slate-800'
+                  ? 'bg-emerald-100/90 border-emerald-400 ring-2 ring-emerald-500 shadow-md z-10 text-slate-900'
+                  : 'bg-emerald-50/90 border-2 border-emerald-400/90 hover:bg-emerald-100/90 text-slate-800'
               }`;
             } else {
               cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition touch-bounce relative overflow-hidden ${
@@ -1558,7 +1559,7 @@
                 <span class="text-[9px] font-bold ${
                   isMatch
                     ? (isSelected ? 'text-indigo-200' : 'text-indigo-700 font-black')
-                    : (isToday ? (isSelected ? 'text-rose-700' : 'text-rose-600') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
+                    : (isToday ? (isSelected ? 'text-emerald-700 font-black' : 'text-emerald-600 font-black') : (isSelected ? 'text-indigo-200' : 'text-indigo-600'))
                 }">${item.isStandaloneSpecial ? '특별' : item.dayNum + 'd'}</span>
               </span>
             </div>
@@ -1566,14 +1567,14 @@
               <div class="font-extrabold text-[11px] leading-tight truncate ${
                 isMatch && !isSelected && !isToday
                   ? 'text-indigo-950 font-black'
-                  : (isToday ? 'text-rose-950 font-black' : (isSelected ? 'text-white' : 'text-indigo-950'))
+                  : (isToday ? 'text-emerald-950 font-black' : (isSelected ? 'text-white' : 'text-indigo-950'))
               }">
                 ${item.leader}
               </div>
             </div>
             <div class="flex items-center justify-between text-[8px] ${
               isToday
-                ? 'text-rose-600 font-semibold'
+                ? 'text-emerald-700 font-semibold'
                 : (isSelected ? 'text-indigo-100' : 'text-slate-500')
             } font-semibold leading-none">
               <span>${coveredHours}/24h</span>
@@ -1586,7 +1587,7 @@
           const dimClass = isFilterActive ? 'opacity-30 hover:opacity-80' : '';
           
           cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${dimClass} ${
-            isSelected ? 'ring-2 ring-rose-400' : ''
+            isSelected ? 'ring-2 ring-indigo-400' : ''
           } ${
             isHoliday
               ? 'bg-rose-50/80 border-rose-200 text-rose-900'
@@ -1766,7 +1767,7 @@
             isSelected
               ? 'bg-indigo-600 text-white border-indigo-700 shadow-sm ring-2 ring-indigo-300'
               : isToday
-              ? 'bg-rose-50 text-rose-800 border-rose-200 hover:bg-rose-100'
+              ? 'bg-emerald-50 text-emerald-850 border-emerald-300 hover:bg-emerald-100'
               : isPast
               ? 'bg-slate-50 text-slate-400 border-slate-200'
               : 'bg-white text-indigo-950 border-indigo-200 hover:bg-indigo-50 shadow-2xs'
@@ -1780,7 +1781,7 @@
           btn.innerHTML = `
             <div class="flex items-center space-x-1 leading-none mb-0.5">
               <span class="text-[9px] ${isSelected ? 'text-indigo-200' : 'text-indigo-600 font-extrabold'}">${d.round}차</span>
-              ${isToday ? '<span class="text-[8px] bg-rose-500 text-white px-1 rounded-full font-black">오늘</span>' : ''}
+              ${isToday ? '<span class="text-[8px] bg-emerald-500 text-white px-1.5 py-0.2 rounded-full font-black">오늘</span>' : ''}
             </div>
             <span class="text-[11px] leading-tight font-black">${d.date} (${d.dayNum}d)</span>
           `;
@@ -1825,8 +1826,8 @@
         if (isToday) {
           btn.className = `px-3.5 py-2.5 rounded-2xl shrink-0 flex flex-col items-center justify-center min-w-[76px] transition-all touch-bounce border ${
             isSelected 
-              ? 'bg-rose-100 border-rose-400 ring-2 ring-rose-500 shadow-md text-slate-900' 
-              : 'bg-rose-50/90 border-rose-200 text-slate-800 hover:bg-rose-100'
+              ? 'bg-emerald-100 border-emerald-400 ring-2 ring-emerald-500 shadow-md text-slate-900' 
+              : 'bg-emerald-50/90 border-2 border-emerald-300 text-slate-800 hover:bg-emerald-100'
           }`;
         } else {
           btn.className = `px-3.5 py-2.5 rounded-2xl shrink-0 flex flex-col items-center justify-center min-w-[76px] transition-all touch-bounce border ${
@@ -1843,23 +1844,23 @@
           <div class="flex items-center space-x-1">
             <span class="text-[10px] font-bold ${
               isToday 
-                ? (isSelected ? 'text-rose-700 font-black' : 'text-rose-600 font-bold') 
+                ? (isSelected ? 'text-emerald-800 font-black' : 'text-emerald-700 font-bold') 
                 : (isSelected ? 'text-indigo-200' : 'text-slate-400')
             }">${chipDayLabel}</span>
             <span class="text-[9px] font-extrabold ${
               isToday 
-                ? (isSelected ? 'text-rose-800' : 'text-rose-600') 
+                ? (isSelected ? 'text-emerald-900' : 'text-emerald-700') 
                 : (isSelected ? 'text-indigo-100' : 'text-purple-600')
             }">${chipRoundLabel}</span>
           </div>
           <span class="text-xs font-black mt-0.5 ${
             isToday 
-              ? 'text-rose-950' 
+              ? 'text-emerald-950 font-black' 
               : (isSelected ? 'text-white' : 'text-slate-900')
           }">${item.date.split(' ')[0]}</span>
           <span class="text-[11px] font-bold mt-0.5 truncate max-w-[66px] ${
             isToday 
-              ? 'text-rose-950 font-black' 
+              ? 'text-emerald-950 font-black' 
               : (isSelected ? 'text-white' : 'text-indigo-950')
           }">
             ${item.leader}
@@ -3672,7 +3673,7 @@
               : `<span class="text-[10px] bg-slate-200 text-slate-600 font-medium px-1.5 py-0.2 rounded">미배정</span>`);
 
         const todayBadgeHtml = isToday
-          ? `<span class="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.2 rounded-full animate-pulse">오늘</span>`
+          ? `<span class="text-[9px] bg-emerald-500 text-white font-black px-1.5 py-0.2 rounded-full animate-pulse">오늘</span>`
           : '';
 
         card.innerHTML = `
