@@ -1158,21 +1158,30 @@
         let isExcluded = false;
         let reason = '';
 
-        const isHoliday = schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey];
+        const isHolidayDate = !!(KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]);
+        const holidayName = isHolidayDate ? KOREAN_HOLIDAYS[dateKey] : '';
+        const blackoutName = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) || '';
+        const isBlackout = !!blackoutName;
+        const isHoliday = schedulerConfig.excludeHoliday && isHolidayDate;
         const isHolidayOpen = schedulerConfig.holidayOverrides && schedulerConfig.holidayOverrides[dateKey];
 
-        if (schedulerConfig.excludeSunday && dayOfWeek === 0) {
+        const isSundayExcluded = (schedulerConfig.excludeSunday && dayOfWeek === 0);
+        const isFridayExcluded = (schedulerConfig.excludeFriday && dayOfWeek === 5);
+        const isHolidayExcluded = (isHoliday && !isHolidayOpen);
+
+        if (isSundayExcluded || isFridayExcluded || isHolidayExcluded || isBlackout) {
           isExcluded = true;
-          reason = '주일예배';
-        } else if (schedulerConfig.excludeFriday && dayOfWeek === 5) {
-          isExcluded = true;
-          reason = '금요기도회';
-        } else if (isHoliday && !isHolidayOpen) {
-          isExcluded = true;
-          reason = KOREAN_HOLIDAYS[dateKey];
-        } else if (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) {
-          isExcluded = true;
-          reason = schedulerConfig.blackoutDates[dateKey];
+          if (isHolidayExcluded && isBlackout) {
+            reason = `${holidayName} · ${blackoutName}`;
+          } else if (isBlackout) {
+            reason = blackoutName;
+          } else if (isHolidayExcluded) {
+            reason = holidayName;
+          } else if (isSundayExcluded) {
+            reason = '주일예배';
+          } else if (isFridayExcluded) {
+            reason = '금요기도회';
+          }
         }
 
         if (isExcluded) {
@@ -1184,7 +1193,11 @@
             day: d,
             dayOfWeek: dayOfWeek,
             date: displayDate,
-            reason: reason
+            reason: reason,
+            isHoliday: isHolidayDate,
+            holidayName: holidayName,
+            isBlackout: isBlackout,
+            blackoutName: blackoutName
           };
           calendarDaysMap[dateKey] = item;
         } else {
@@ -1495,9 +1508,15 @@
         const isSelected = (dateKey === selectedDateKey);
         const isToday = (dateKey === todayKey);
 
-        const dayLabelHtml = isToday
-          ? `<span class="font-black text-[11px] ${isSelected ? 'text-emerald-800' : 'text-emerald-700'}">${day}</span>`
-          : `<span class="font-black text-[11px] ${isSelected ? 'text-white' : (isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800'))}">${day}</span>`;
+        const isPrayerDay = !!(item && item.isPrayerDay);
+        let dayColor = isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800');
+        if (isToday) {
+          dayColor = (isSelected && isPrayerDay) ? 'text-white' : 'text-emerald-700 font-black';
+        } else if (isSelected && isPrayerDay) {
+          dayColor = 'text-white';
+        }
+
+        const dayLabelHtml = `<span class="font-black text-[11px] ${dayColor}">${day}</span>`;
 
         const isFilterActive = (selectedLeaderFilter && selectedLeaderFilter !== 'ALL');
         const isMatch = (item && item.isPrayerDay && item.leader === selectedLeaderFilter);
@@ -1582,23 +1601,42 @@
             </div>
           `;
         } else if (item && !item.isPrayerDay) {
-          const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey];
-          const isHoliday = schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey];
+          const isBlackout = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) || (item && item.isBlackout);
+          const isHoliday = (schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) || (item && item.isHoliday && schedulerConfig.excludeHoliday);
+          const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[dateKey]) || (item && item.holidayName) || '공휴일';
+          const blackoutName = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[dateKey]) || (item && item.blackoutName) || (item && item.reason) || '행사일';
+
           const dimClass = isFilterActive ? 'opacity-30 hover:opacity-80' : '';
-          
-          cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden ${dimClass} ${
-            isSelected ? 'ring-2 ring-indigo-400' : ''
-          } ${
-            isHoliday
-              ? 'bg-rose-50/80 border-rose-200 text-rose-900'
-              : (isBlackout 
-                  ? 'bg-amber-50 border-amber-200 text-amber-900' 
-                  : 'bg-slate-100/80 border-slate-200 text-slate-400')
-          }`;
+          const selectRing = isSelected ? 'ring-2 ring-indigo-500 border-indigo-400 z-10 shadow-sm' : '';
+          const dayNumColor = isSaturday ? 'text-blue-600' : (isSunday ? 'text-rose-600' : 'text-slate-800');
 
-          cell.onclick = () => selectDateKey(dateKey);
+          if (isHoliday && isBlackout) {
+            // ⭐️ 공휴일과 교회 행사가 겹칠 때: 둘 다 선명하게 2줄로 표시 & 듀얼 배지 & 조화로운 투톤 배경
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-gradient-to-br from-rose-50/95 via-amber-50/80 to-amber-100/90 border-amber-300 text-slate-900 ${dimClass} ${selectRing}`;
+            cell.onclick = () => selectDateKey(dateKey);
 
-          if (isHoliday) {
+            cell.innerHTML = `
+              <div class="flex items-center justify-between w-full overflow-hidden leading-none">
+                <span class="font-black text-[11px] ${dayNumColor}">${day}</span>
+                <div class="flex items-center space-x-0.5 shrink-0">
+                  <span class="text-[7px] shrink-0 text-rose-700 font-extrabold bg-rose-100 px-1 py-0.2 rounded border border-rose-200/60">휴일</span>
+                  <span class="text-[7px] shrink-0 text-amber-800 font-extrabold bg-amber-100 px-1 py-0.2 rounded border border-amber-200/60">행사</span>
+                </div>
+              </div>
+              <div class="my-auto text-center leading-tight py-0.5">
+                <div class="text-[9.5px] font-black truncate text-rose-800 tracking-tight">
+                  ${holidayName}
+                </div>
+                <div class="text-[9.5px] font-extrabold truncate text-amber-900 tracking-tight mt-0.5">
+                  ${blackoutName}
+                </div>
+              </div>
+              <div class="h-0.5"></div>
+            `;
+          } else if (isHoliday) {
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-rose-50/80 border-rose-200 text-rose-900 ${dimClass} ${selectRing}`;
+            cell.onclick = () => selectDateKey(dateKey);
+
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
                 <span class="font-black text-[11px] text-rose-600">${day}</span>
@@ -1606,29 +1644,35 @@
               </div>
               <div class="my-auto text-center">
                 <div class="text-[10px] font-bold truncate text-rose-800">
-                  ${item.reason || '공휴일'}
+                  ${item.reason || holidayName || '공휴일'}
                 </div>
               </div>
               <div class="h-1"></div>
             `;
           } else if (isBlackout) {
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-amber-50 border-amber-200 text-amber-900 ${dimClass} ${selectRing}`;
+            cell.onclick = () => selectDateKey(dateKey);
+
             cell.innerHTML = `
               <div class="flex items-center justify-between w-full overflow-hidden leading-none">
-                ${dayLabelHtml}
-                <span class="text-[8px] shrink-0 text-amber-600 font-bold">쉼</span>
+                <span class="font-black text-[11px] ${dayNumColor}">${day}</span>
+                <span class="text-[8px] shrink-0 text-amber-700 font-extrabold bg-amber-100/80 px-1 py-0.2 rounded">행사</span>
               </div>
               <div class="my-auto text-center">
                 <div class="text-[10px] font-bold truncate text-amber-800">
-                  ${item.reason || '행사일'}
+                  ${item.reason || blackoutName || '행사일'}
                 </div>
               </div>
               <div class="h-1"></div>
             `;
           } else {
             // 주일예배 (가운데 주일예배만 깔끔하게 표시)
+            cell.className = `h-[58px] p-1 rounded-xl border flex flex-col justify-between cursor-pointer transition overflow-hidden bg-slate-100/80 border-slate-200 text-slate-400 ${dimClass} ${selectRing}`;
+            cell.onclick = () => selectDateKey(dateKey);
+
             cell.innerHTML = `
               <div class="flex items-center justify-start w-full overflow-hidden leading-none">
-                ${dayLabelHtml}
+                <span class="font-black text-[11px] text-rose-600">${day}</span>
               </div>
               <div class="my-auto text-center">
                 <div class="text-[10px] font-extrabold tracking-tight text-slate-400">
@@ -1928,38 +1972,53 @@
 
       if (!item || !item.isPrayerDay) {
         // 쉬는 날 (주일, 공휴일 또는 행사일)
-        const isBlackout = schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey];
-        const isHoliday = schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[selectedDateKey];
-        const reasonName = isHoliday ? KOREAN_HOLIDAYS[selectedDateKey] : (isBlackout ? schedulerConfig.blackoutDates[selectedDateKey] : (item && item.reason ? item.reason : '주일예배'));
+        const isBlackout = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey]) || (item && item.isBlackout);
+        const isHoliday = (schedulerConfig.excludeHoliday && KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[selectedDateKey]) || (item && item.isHoliday && schedulerConfig.excludeHoliday);
+        const holidayName = (KOREAN_HOLIDAYS && KOREAN_HOLIDAYS[selectedDateKey]) || (item && item.holidayName) || '공휴일';
+        const blackoutName = (schedulerConfig.blackoutDates && schedulerConfig.blackoutDates[selectedDateKey]) || (item && item.blackoutName) || (item && item.reason) || '교회 행사';
+        const isDual = (isHoliday && isBlackout);
 
-        dayTag.innerText = isHoliday ? "공휴일 쉼" : "쉼 (릴레이 제외)";
-        dayTag.className = isHoliday 
-          ? "px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-100 text-rose-900" 
-          : "px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900";
-        
         const m = selectedDateKey.split('-')[1];
         const d = selectedDateKey.split('-')[2];
         dateText.innerText = `${parseInt(m, 10)}월 ${parseInt(d, 10)}일 (${item ? item.date.split(' ')[1].replace(/[()]/g, '') : ''})`;
-        roundBadge.innerText = isHoliday ? "법정 공휴일" : (isBlackout ? "교회 행사" : "주일 쉼");
 
-        leaderText.innerText = reasonName;
-        leaderRoleBadge.className = isHoliday 
-          ? "text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-200"
-          : "text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200";
-        leaderRoleBadge.innerText = isHoliday ? "공휴일 자동 연기" : (isBlackout ? "행사로 기도일 건너뜀" : "주일 정기 예배");
-
-        statsTwoBox.classList.add('hidden');
-        progressBarContainer.classList.add('hidden');
-        summaryStatsRight.classList.add('hidden');
-        timeFilterSection.classList.add('hidden');
-
-        blackoutNoticeBox.classList.remove('hidden');
-        document.getElementById('blackoutNoticeTitle').innerText = `${reasonName} - 릴레이 기도 쉼`;
-        document.getElementById('blackoutNoticeDesc').innerText = isHoliday
-          ? `대한민국 법정 공휴일 [${reasonName}]로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 자동 연쇄 밀림되었습니다.`
-          : (isBlackout
-              ? `특별 행사 [${reasonName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 착착 밀렸습니다.`
-              : `주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.`);
+        if (isDual) {
+          dayTag.innerText = "공휴일 & 행사 쉼";
+          dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-gradient-to-r from-rose-100 to-amber-100 text-amber-950 border border-amber-300";
+          roundBadge.innerText = "공휴일 + 행사일";
+          leaderText.innerText = `${holidayName} · ${blackoutName}`;
+          leaderRoleBadge.className = "text-xs font-bold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-300";
+          leaderRoleBadge.innerText = "공휴일 및 행사로 쉼";
+          document.getElementById('blackoutNoticeTitle').innerText = `${holidayName} & ${blackoutName} - 릴레이 쉼`;
+          document.getElementById('blackoutNoticeDesc').innerText = `대한민국 법정 공휴일 [${holidayName}]과 교회 행사 [${blackoutName}] 일정이 겹치는 날로 릴레이 기도가 쉬어갑니다.`;
+        } else if (isHoliday) {
+          dayTag.innerText = "공휴일 쉼";
+          dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-rose-100 text-rose-900";
+          roundBadge.innerText = "법정 공휴일";
+          leaderText.innerText = holidayName;
+          leaderRoleBadge.className = "text-xs font-bold text-rose-800 bg-rose-100 px-2 py-0.5 rounded-md border border-rose-200";
+          leaderRoleBadge.innerText = "공휴일 자동 연기";
+          document.getElementById('blackoutNoticeTitle').innerText = `${holidayName} - 릴레이 기도 쉼`;
+          document.getElementById('blackoutNoticeDesc').innerText = `대한민국 법정 공휴일 [${holidayName}]로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 자동 연쇄 밀림되었습니다.`;
+        } else if (isBlackout) {
+          dayTag.innerText = "교회행사 쉼";
+          dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-100 text-amber-900";
+          roundBadge.innerText = "교회 행사";
+          leaderText.innerText = blackoutName;
+          leaderRoleBadge.className = "text-xs font-bold text-amber-800 bg-amber-100 px-2 py-0.5 rounded-md border border-amber-200";
+          leaderRoleBadge.innerText = "행사로 기도일 건너뜀";
+          document.getElementById('blackoutNoticeTitle').innerText = `${blackoutName} - 릴레이 기도 쉼`;
+          document.getElementById('blackoutNoticeDesc').innerText = `특별 행사 [${blackoutName}] 일정으로 릴레이 기도가 쉬어가며, 이후 배정 일정은 다음 기도일로 착착 밀렸습니다.`;
+        } else {
+          dayTag.innerText = "주일 쉼";
+          dayTag.className = "px-2 py-0.5 text-[11px] font-bold rounded-md bg-slate-100 text-slate-700 border border-slate-200";
+          roundBadge.innerText = "주일 쉼";
+          leaderText.innerText = "주일예배";
+          leaderRoleBadge.className = "text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200";
+          leaderRoleBadge.innerText = "주일 정기 예배";
+          document.getElementById('blackoutNoticeTitle').innerText = "주일예배 - 릴레이 기도 쉼";
+          document.getElementById('blackoutNoticeDesc').innerText = "주일은 본당 공예배 일정으로 릴레이 기도가 쉬어갑니다. 다음 순번은 월요일에 이어집니다.";
+        }
 
         const actionArea = document.getElementById('blackoutActionArea');
         if (actionArea) {
