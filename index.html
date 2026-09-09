@@ -211,9 +211,12 @@
           <span id="curDateText" class="text-sm font-extrabold text-indigo-900 bg-indigo-50/80 px-2 py-0.5 rounded-lg border border-indigo-100 shrink-0">9월 9일 (수)</span>
         </div>
 
-        <div class="text-right shrink-0 flex items-baseline space-x-1.5" id="summaryStatsRight">
-          <span class="text-2xl font-black text-indigo-600 leading-none" id="curProgressRatio">0%</span>
-          <span class="text-[11px] font-semibold text-slate-500 whitespace-nowrap" id="curSlotCount">0/24시간 채움</span>
+        <div onclick="openSummaryModal()" class="text-right shrink-0 flex items-baseline space-x-1.5 cursor-pointer hover:opacity-80 transition group" id="summaryStatsRight" title="전체 기간 24시간 달성률 모아보기 (클릭)">
+          <span class="text-2xl font-black text-indigo-600 leading-none group-hover:scale-105 transition-transform" id="curProgressRatio">0%</span>
+          <span class="text-[11px] font-semibold text-slate-500 whitespace-nowrap flex items-center space-x-0.5">
+            <span id="curSlotCount">0/24시간 채움</span>
+            <span class="text-[10px] text-indigo-600 font-bold ml-1 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100 group-hover:bg-indigo-100 transition">📊 모아보기</span>
+          </span>
         </div>
       </div>
 
@@ -676,18 +679,100 @@
     </div>
   </div>
 
-  <!-- 5. 관리자 전체 현황 요약 통계 모달 -->
+  <!-- 5. 전체 현황 요약 통계 모달 (월별 / 순환차수별 24시간 달성률 모아보기) -->
   <div id="summaryModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
-    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-6 shadow-2xl max-h-[85vh] flex flex-col">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+    <div class="bg-white w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl max-h-[88vh] flex flex-col">
+      <!-- 헤더 -->
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
         <div>
-          <span class="text-xs font-bold text-indigo-600 uppercase">교역자/간사 현황판</span>
-          <h3 class="text-base font-bold text-slate-900">전체 릴레이 달성 현황 통계</h3>
+          <span class="text-[11px] font-bold text-indigo-600 uppercase tracking-wide">릴레이 달성 현황판</span>
+          <h3 class="text-base font-black text-slate-900">24시간 기도 달성률 모아보기</h3>
         </div>
-        <button onclick="closeSummaryModal()" class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">✕</button>
+        <button onclick="closeSummaryModal()" class="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500 transition">✕</button>
       </div>
 
-      <div class="mt-3 overflow-y-auto flex-1 pr-1 space-y-2 text-xs" id="summaryList">
+      <!-- 상단 보기 모드 전환 (월별 모아보기 vs 순환 차수별 모아보기) -->
+      <div class="pt-2.5">
+        <div class="flex bg-slate-100 p-1 rounded-xl w-full text-xs font-bold">
+          <button id="summaryTabBtnMonth" onclick="switchSummaryGroupMode('month')" class="flex-1 py-1.5 rounded-lg text-center transition bg-white text-indigo-700 shadow-xs font-bold">
+            📅 월별 모아보기
+          </button>
+          <button id="summaryTabBtnCycle" onclick="switchSummaryGroupMode('cycle')" class="flex-1 py-1.5 rounded-lg text-center transition text-slate-500 hover:text-slate-800 font-bold">
+            🔄 순환 차수별 모아보기
+          </button>
+        </div>
+      </div>
+
+      <!-- 월별 모아보기 탭 바 (연도 선택 + 월 선택 가로 스크롤) -->
+      <div id="summaryMonthNavContainer" class="pt-2 space-y-1.5">
+        <div class="flex items-center space-x-1.5 overflow-x-auto pb-0.5 no-scrollbar" id="summaryYearTabs">
+          <!-- 연도 버튼들 동적 렌더링 (예: 2026년, 2027년) -->
+        </div>
+        <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 no-scrollbar" id="summaryMonthTabs">
+          <!-- 월 칩들 동적 렌더링 (예: [8월] [9월] [10월] [11월] [12월]) -->
+        </div>
+      </div>
+
+      <!-- 순환 차수별 탭 바 (가로 스크롤) -->
+      <div id="summaryCycleNavContainer" class="hidden pt-2">
+        <div class="flex items-center space-x-1.5 overflow-x-auto pb-1 no-scrollbar" id="summaryCycleTabs">
+          <!-- 차수 칩들 동적 렌더링 (예: [6차 순환] [7차 순환] [8차 순환]...) -->
+        </div>
+      </div>
+
+      <!-- 선택된 기간 요약 통계 카드 (KPI Banner) -->
+      <div id="summaryKpiBanner" class="mt-2.5 p-3 bg-gradient-to-br from-indigo-50/90 via-slate-50 to-purple-50/50 rounded-2xl border border-indigo-100/80 shadow-2xs">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-1.5 min-w-0">
+            <span id="summaryPeriodLabel" class="text-xs font-black text-indigo-950 truncate">2026년 9월 현황</span>
+            <span id="summaryPeriodDaysCount" class="text-[10px] bg-white px-1.5 py-0.5 rounded-md font-bold text-slate-600 border border-slate-200 shrink-0">총 22일</span>
+          </div>
+          <div class="flex items-baseline space-x-1 shrink-0">
+            <span class="text-[10px] font-bold text-slate-500">평균 달성률</span>
+            <span id="summaryPeriodAvgPct" class="text-lg font-black text-indigo-600">0%</span>
+          </div>
+        </div>
+
+        <!-- 미니 프로그레스 바 -->
+        <div class="w-full bg-slate-200/80 rounded-full h-1.5 mt-2 overflow-hidden">
+          <div id="summaryPeriodBar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+
+        <!-- 3개 미니 지표 -->
+        <div class="grid grid-cols-3 gap-1.5 mt-2.5 text-[11px] text-center">
+          <div class="bg-white/80 p-1.5 rounded-xl border border-slate-200/60">
+            <div class="text-[9px] text-slate-400 font-bold">24h 완주일</div>
+            <div class="font-black text-emerald-600 mt-0.5" id="summaryKpiFullDays">0일</div>
+          </div>
+          <div class="bg-white/80 p-1.5 rounded-xl border border-slate-200/60">
+            <div class="text-[9px] text-slate-400 font-bold">빈 시간대</div>
+            <div class="font-black text-amber-600 mt-0.5" id="summaryKpiEmptyHours">0시간</div>
+          </div>
+          <div class="bg-white/80 p-1.5 rounded-xl border border-slate-200/60">
+            <div class="text-[9px] text-slate-400 font-bold">총 참여인원</div>
+            <div class="font-black text-indigo-700 mt-0.5" id="summaryKpiTotalParticipants">0명</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 서브 필터 버튼: 전체 / 빈시간 있음 / 100% 완주 -->
+      <div class="mt-2.5 flex items-center justify-between text-[11px]">
+        <span class="font-bold text-slate-500 text-[10px]">상세 일자 달성률</span>
+        <div class="flex items-center space-x-1">
+          <button onclick="setSummaryFilter('all')" id="summaryFilterAll" class="px-2 py-0.5 rounded-md font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 transition">
+            전체
+          </button>
+          <button onclick="setSummaryFilter('incomplete')" id="summaryFilterIncomplete" class="px-2 py-0.5 rounded-md font-bold text-slate-500 hover:bg-slate-100 border border-transparent transition">
+            ⚠️ 빈시간 있음
+          </button>
+          <button onclick="setSummaryFilter('full')" id="summaryFilterFull" class="px-2 py-0.5 rounded-md font-bold text-slate-500 hover:bg-slate-100 border border-transparent transition">
+            ✨ 100% 완주
+          </button>
+        </div>
+      </div>
+
+      <!-- 상세 일자 리스트 스크롤 영역 -->
+      <div class="mt-2 overflow-y-auto flex-1 pr-1 space-y-1.5 text-xs" id="summaryList">
         <!-- 요약 리스트 렌더링 -->
       </div>
     </div>
@@ -2813,11 +2898,264 @@
       selectDateKey(dateKey);
     }
 
+    let summaryState = {
+      groupMode: 'month', // 'month' | 'cycle'
+      selectedYear: 2026,
+      selectedMonth: 9,
+      selectedRound: 6,
+      filter: 'all'       // 'all' | 'incomplete' | 'full'
+    };
+
     function openSummaryModal() {
+      if (selectedDateKey) {
+        const parts = selectedDateKey.split('-');
+        if (parts.length === 3) {
+          summaryState.selectedYear = parseInt(parts[0], 10);
+          summaryState.selectedMonth = parseInt(parts[1], 10);
+        }
+        const curDayItem = prayerDaysList.find(d => d.dateKey === selectedDateKey);
+        if (curDayItem && curDayItem.round) {
+          summaryState.selectedRound = curDayItem.round;
+        }
+      }
+
+      renderSummaryModal();
+      document.getElementById('summaryModal').classList.remove('hidden');
+    }
+
+    function closeSummaryModal() {
+      document.getElementById('summaryModal').classList.add('hidden');
+    }
+
+    function switchSummaryGroupMode(mode) {
+      summaryState.groupMode = mode;
+      
+      const btnMonth = document.getElementById('summaryTabBtnMonth');
+      const btnCycle = document.getElementById('summaryTabBtnCycle');
+      const monthNav = document.getElementById('summaryMonthNavContainer');
+      const cycleNav = document.getElementById('summaryCycleNavContainer');
+
+      if (mode === 'month') {
+        btnMonth.className = "flex-1 py-1.5 rounded-lg text-center transition bg-white text-indigo-700 shadow-xs font-bold";
+        btnCycle.className = "flex-1 py-1.5 rounded-lg text-center transition text-slate-500 hover:text-slate-800 font-bold";
+        monthNav.classList.remove('hidden');
+        cycleNav.classList.add('hidden');
+      } else {
+        btnMonth.className = "flex-1 py-1.5 rounded-lg text-center transition text-slate-500 hover:text-slate-800 font-bold";
+        btnCycle.className = "flex-1 py-1.5 rounded-lg text-center transition bg-white text-purple-700 shadow-xs font-bold";
+        monthNav.classList.add('hidden');
+        cycleNav.classList.remove('hidden');
+      }
+
+      renderSummaryModal();
+    }
+
+    function selectSummaryYear(year) {
+      summaryState.selectedYear = year;
+      const availableMonths = getAvailableMonthsForYear(year);
+      if (!availableMonths.includes(summaryState.selectedMonth)) {
+        summaryState.selectedMonth = availableMonths[0] || 1;
+      }
+      renderSummaryModal();
+    }
+
+    function selectSummaryMonth(month) {
+      summaryState.selectedMonth = month;
+      renderSummaryModal();
+    }
+
+    function selectSummaryRound(round) {
+      summaryState.selectedRound = round;
+      renderSummaryModal();
+    }
+
+    function setSummaryFilter(filter) {
+      summaryState.filter = filter;
+
+      const btnAll = document.getElementById('summaryFilterAll');
+      const btnIncomplete = document.getElementById('summaryFilterIncomplete');
+      const btnFull = document.getElementById('summaryFilterFull');
+
+      const activeClass = "px-2 py-0.5 rounded-md font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 transition";
+      const inactiveClass = "px-2 py-0.5 rounded-md font-bold text-slate-500 hover:bg-slate-100 border border-transparent transition";
+
+      if (btnAll) btnAll.className = filter === 'all' ? activeClass : inactiveClass;
+      if (btnIncomplete) btnIncomplete.className = filter === 'incomplete' ? activeClass : inactiveClass;
+      if (btnFull) btnFull.className = filter === 'full' ? activeClass : inactiveClass;
+
+      renderSummaryList();
+    }
+
+    function getAvailableYears() {
+      const years = new Set();
+      prayerDaysList.forEach(d => years.add(d.year));
+      return Array.from(years).sort((a, b) => a - b);
+    }
+
+    function getAvailableMonthsForYear(year) {
+      const months = new Set();
+      prayerDaysList.forEach(d => {
+        if (d.year === year) months.add(d.month);
+      });
+      return Array.from(months).sort((a, b) => a - b);
+    }
+
+    function getAvailableRounds() {
+      const roundsMap = {};
+      prayerDaysList.forEach(d => {
+        if (!roundsMap[d.round]) {
+          roundsMap[d.round] = { round: d.round, start: d.date, end: d.date, count: 0 };
+        }
+        roundsMap[d.round].end = d.date;
+        roundsMap[d.round].count++;
+      });
+      return Object.values(roundsMap).sort((a, b) => a.round - b.round);
+    }
+
+    function renderSummaryModal() {
+      if (summaryState.groupMode === 'month') {
+        renderMonthTabsUI();
+      } else {
+        renderCycleTabsUI();
+      }
+
+      let groupDays = [];
+      let periodTitle = '';
+
+      if (summaryState.groupMode === 'month') {
+        groupDays = prayerDaysList.filter(d => d.year === summaryState.selectedYear && d.month === summaryState.selectedMonth);
+        periodTitle = `${summaryState.selectedYear}년 ${summaryState.selectedMonth}월 현황`;
+      } else {
+        groupDays = prayerDaysList.filter(d => d.round === summaryState.selectedRound);
+        const startStr = groupDays.length > 0 ? groupDays[0].date : '';
+        const endStr = groupDays.length > 0 ? groupDays[groupDays.length - 1].date : '';
+        periodTitle = `${summaryState.selectedRound}차 순환 (${startStr} ~ ${endStr})`;
+      }
+
+      const totalDays = groupDays.length;
+      let totalAvailableHours = totalDays * 24;
+      let totalCoveredHours = 0;
+      let totalParticipants = 0;
+      let fullDaysCount = 0;
+
+      groupDays.forEach(d => {
+        const dayData = prayerData[d.dayNum] || {};
+        let dayCovered = 0;
+        for (let h = 0; h < 24; h++) {
+          const list = dayData[h.toString()] || [];
+          if (list.length > 0) {
+            dayCovered++;
+            totalParticipants += list.length;
+          }
+        }
+        totalCoveredHours += dayCovered;
+        if (dayCovered === 24) fullDaysCount++;
+      });
+
+      const avgPct = totalAvailableHours > 0 ? Math.round((totalCoveredHours / totalAvailableHours) * 100) : 0;
+      const emptyHours = Math.max(0, totalAvailableHours - totalCoveredHours);
+
+      const labelEl = document.getElementById('summaryPeriodLabel');
+      if (labelEl) labelEl.innerText = periodTitle;
+
+      const daysCountEl = document.getElementById('summaryPeriodDaysCount');
+      if (daysCountEl) daysCountEl.innerText = `총 ${totalDays}일 기도`;
+
+      const avgPctEl = document.getElementById('summaryPeriodAvgPct');
+      if (avgPctEl) avgPctEl.innerText = `${avgPct}%`;
+
+      const barEl = document.getElementById('summaryPeriodBar');
+      if (barEl) barEl.style.width = `${avgPct}%`;
+
+      const fullDaysEl = document.getElementById('summaryKpiFullDays');
+      if (fullDaysEl) fullDaysEl.innerText = `${fullDaysCount}일`;
+
+      const emptyHoursEl = document.getElementById('summaryKpiEmptyHours');
+      if (emptyHoursEl) emptyHoursEl.innerText = `${emptyHours}시간`;
+
+      const totalPartEl = document.getElementById('summaryKpiTotalParticipants');
+      if (totalPartEl) totalPartEl.innerText = `${totalParticipants.toLocaleString()}명`;
+
+      renderSummaryList();
+    }
+
+    function renderMonthTabsUI() {
+      const yearContainer = document.getElementById('summaryYearTabs');
+      const monthContainer = document.getElementById('summaryMonthTabs');
+      if (!yearContainer || !monthContainer) return;
+
+      const years = getAvailableYears();
+      yearContainer.innerHTML = years.map(y => {
+        const isSel = y === summaryState.selectedYear;
+        return `
+          <button onclick="selectSummaryYear(${y})" class="px-2.5 py-1 rounded-lg text-xs font-black transition ${
+            isSel 
+              ? 'bg-indigo-600 text-white shadow-xs' 
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }">
+            ${y}년
+          </button>
+        `;
+      }).join('');
+
+      const months = getAvailableMonthsForYear(summaryState.selectedYear);
+      monthContainer.innerHTML = months.map(m => {
+        const isSel = m === summaryState.selectedMonth;
+        return `
+          <button id="summaryMonthBtn-${m}" onclick="selectSummaryMonth(${m})" class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition ${
+            isSel 
+              ? 'bg-indigo-600 text-white font-black shadow-xs ring-2 ring-indigo-300' 
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold'
+          }">
+            ${m}월
+          </button>
+        `;
+      }).join('');
+
+      setTimeout(() => {
+        const activeChip = document.getElementById(`summaryMonthBtn-${summaryState.selectedMonth}`);
+        if (activeChip) activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }, 50);
+    }
+
+    function renderCycleTabsUI() {
+      const cycleContainer = document.getElementById('summaryCycleTabs');
+      if (!cycleContainer) return;
+
+      const rounds = getAvailableRounds();
+      cycleContainer.innerHTML = rounds.map(r => {
+        const isSel = r.round === summaryState.selectedRound;
+        return `
+          <button id="summaryRoundBtn-${r.round}" onclick="selectSummaryRound(${r.round})" class="px-3 py-1.5 rounded-xl text-xs whitespace-nowrap transition flex flex-col items-center leading-tight ${
+            isSel 
+              ? 'bg-purple-600 text-white font-black shadow-xs ring-2 ring-purple-300' 
+              : 'bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold'
+          }">
+            <span>${r.round}차 순환</span>
+            <span class="text-[9px] opacity-80 font-normal">${r.start.split(' ')[0]}~${r.end.split(' ')[0]}</span>
+          </button>
+        `;
+      }).join('');
+
+      setTimeout(() => {
+        const activeChip = document.getElementById(`summaryRoundBtn-${summaryState.selectedRound}`);
+        if (activeChip) activeChip.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+      }, 50);
+    }
+
+    function renderSummaryList() {
       const container = document.getElementById('summaryList');
+      if (!container) return;
       container.innerHTML = '';
 
-      prayerDaysList.slice(0, 30).forEach(item => {
+      let groupDays = [];
+      if (summaryState.groupMode === 'month') {
+        groupDays = prayerDaysList.filter(d => d.year === summaryState.selectedYear && d.month === summaryState.selectedMonth);
+      } else {
+        groupDays = prayerDaysList.filter(d => d.round === summaryState.selectedRound);
+      }
+
+      const enrichedDays = groupDays.map(item => {
         const dayData = prayerData[item.dayNum] || {};
         let covered = 0;
         let total = 0;
@@ -2829,35 +3167,83 @@
           }
         }
         const pct = Math.round((covered / 24) * 100);
+        return {
+          ...item,
+          covered,
+          total,
+          pct,
+          isFull: covered === 24
+        };
+      });
 
+      let filteredDays = enrichedDays;
+      if (summaryState.filter === 'incomplete') {
+        filteredDays = enrichedDays.filter(d => !d.isFull);
+      } else if (summaryState.filter === 'full') {
+        filteredDays = enrichedDays.filter(d => d.isFull);
+      }
+
+      if (filteredDays.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <span class="text-2xl block mb-1">🕊️</span>
+            <p class="font-bold">해당 조건에 일치하는 기도 일정이 없습니다.</p>
+          </div>
+        `;
+        return;
+      }
+
+      filteredDays.forEach(item => {
+        const isToday = item.dateKey === getTodayDateKey();
         const card = document.createElement('div');
         card.onclick = () => {
           closeSummaryModal();
           selectDateKey(item.dateKey);
+          showToast(`${item.date} (${item.dayNum}일차) 일정으로 이동했습니다.`, '📍');
         };
-        card.className = "p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between cursor-pointer hover:bg-indigo-50 transition";
+
+        const bgClass = item.isFull 
+          ? 'bg-emerald-50/60 border-emerald-200 hover:bg-emerald-100/70'
+          : (isToday 
+              ? 'bg-indigo-50/70 border-indigo-300 ring-1 ring-indigo-400 hover:bg-indigo-100/80' 
+              : 'bg-slate-50/80 border-slate-200 hover:bg-indigo-50/60');
+
+        card.className = `p-2.5 border rounded-xl flex items-center justify-between cursor-pointer transition touch-bounce ${bgClass}`;
+        
+        const badgeHtml = item.isFull
+          ? `<span class="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded">✨ 100% 완주</span>`
+          : (item.covered > 0 
+              ? `<span class="text-[10px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.2 rounded">${24 - item.covered}시간 남음</span>`
+              : `<span class="text-[10px] bg-slate-200 text-slate-600 font-medium px-1.5 py-0.2 rounded">미배정</span>`);
+
+        const todayBadgeHtml = isToday
+          ? `<span class="text-[9px] bg-rose-500 text-white font-black px-1.5 py-0.2 rounded-full animate-pulse">오늘</span>`
+          : '';
+
         card.innerHTML = `
-          <div>
-            <div class="flex items-center space-x-1.5">
-              <span class="font-black text-indigo-700">${item.dayNum}일차</span>
-              <span class="text-[10px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded">${item.round}차 ${item.turnInCycle}번</span>
+          <div class="min-w-0 pr-2">
+            <div class="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+              ${todayBadgeHtml}
+              <span class="font-black text-indigo-900">${item.dayNum}일차</span>
+              <span class="text-[10px] bg-purple-50 text-purple-700 font-bold px-1.5 py-0.2 rounded border border-purple-100">${item.round}차 ${item.turnInCycle}번</span>
               <span class="font-bold text-slate-800">${item.date}</span>
-              <span class="text-[10px] text-slate-500">${item.leader}</span>
+              <span class="text-[11px] font-bold text-slate-600 truncate">👤 ${item.leader}</span>
             </div>
-            <div class="text-[10px] text-slate-400 mt-0.5">${covered}/24시간 채움 • ${total}명 참여</div>
+            <div class="flex items-center space-x-1.5 text-[10px] text-slate-400 mt-1">
+              <span>${item.covered}/24시간 채움</span>
+              <span>•</span>
+              <span>${item.total}명 동참</span>
+              <span>•</span>
+              ${badgeHtml}
+            </div>
           </div>
-          <div class="text-right">
-            <span class="text-sm font-black ${covered === 24 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
+          <div class="text-right shrink-0">
+            <div class="text-base font-black ${item.isFull ? 'text-emerald-600' : 'text-indigo-600'} leading-none">${item.pct}%</div>
+            <div class="text-[9px] text-slate-400 font-semibold mt-1">이동 ➔</div>
           </div>
         `;
         container.appendChild(card);
       });
-
-      document.getElementById('summaryModal').classList.remove('hidden');
-    }
-
-    function closeSummaryModal() {
-      document.getElementById('summaryModal').classList.add('hidden');
     }
 
     // ========================================================
