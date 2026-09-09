@@ -473,13 +473,37 @@
         </div>
 
         <!-- 2) 현재 등록된 교회 행사/쉼 목록 -->
-        <div>
-          <div class="flex items-center justify-between mb-1.5">
-            <span class="font-bold text-slate-800 block">📋 등록된 교회 행사 목록</span>
-            <span id="blackoutCountBadge" class="text-[10px] text-slate-400">총 0일</span>
+        <div class="bg-amber-50/30 p-2.5 rounded-xl border border-amber-200/60 space-y-2">
+          <div class="flex items-center justify-between flex-wrap gap-1.5">
+            <div class="flex items-center space-x-1.5">
+              <span class="font-bold text-slate-800 text-xs flex items-center space-x-1">
+                <span>📋</span> <span>등록된 교회 행사 목록</span>
+              </span>
+              <span id="blackoutCountBadge" class="text-[10px] font-bold text-amber-800 bg-amber-100/80 px-1.5 py-0.5 rounded-full">0건</span>
+            </div>
+            <!-- 연도별 필터 버튼 -->
+            <div id="blackoutYearPillsContainer" class="flex items-center space-x-1 text-[10px]">
+              <!-- JS로 [2026년] [2027년] [전체] 버튼 렌더링 -->
+            </div>
           </div>
-          <div id="blackoutListContainer" class="space-y-1.5 max-h-36 overflow-y-auto">
+
+          <!-- 진행 예정 및 현재 진행 중 행사 목록 -->
+          <div id="blackoutListContainer" class="space-y-1.5 max-h-48 overflow-y-auto">
             <!-- JS로 동적 렌더링 -->
+          </div>
+
+          <!-- 지난 행사 접기/펼치기 아코디언 영역 -->
+          <div id="pastBlackoutSection" class="hidden border-t border-amber-200/60 pt-2 space-y-1.5">
+            <button onclick="togglePastBlackouts()" type="button" class="w-full flex items-center justify-between px-2.5 py-1.5 text-[11px] font-bold text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition touch-bounce shadow-2xs">
+              <span class="flex items-center space-x-1">
+                <span>🕒</span>
+                <span id="pastBlackoutTitleText">지난 행사 (0건)</span>
+              </span>
+              <span id="pastBlackoutToggleIcon" class="text-[10px] text-slate-400 font-semibold">▼ 펼치기</span>
+            </button>
+            <div id="pastBlackoutListContainer" class="hidden space-y-1 max-h-36 overflow-y-auto pt-0.5">
+              <!-- JS로 지난 행사 렌더링 -->
+            </div>
           </div>
         </div>
 
@@ -2006,52 +2030,242 @@
       }
     }
 
-    function removeBlackoutDate(dateKey) {
-      if (confirm(`${dateKey} 행사를 해제하고 일정을 다시 원복하시겠습니까?`)) {
-        delete schedulerConfig.blackoutDates[dateKey];
-        saveConfigData();
+    let currentBlackoutYearFilter = 'ALL';
+    let showPastBlackouts = false;
 
+    function togglePastBlackouts() {
+      showPastBlackouts = !showPastBlackouts;
+      const list = document.getElementById('pastBlackoutListContainer');
+      const icon = document.getElementById('pastBlackoutToggleIcon');
+      if (list) {
+        if (showPastBlackouts) list.classList.remove('hidden');
+        else list.classList.add('hidden');
+      }
+      if (icon) {
+        icon.innerText = showPastBlackouts ? '▲ 접기' : '▼ 펼치기';
+      }
+    }
+
+    function setBlackoutYearFilter(year) {
+      currentBlackoutYearFilter = year;
+      renderBlackoutList();
+    }
+
+    function getGroupedBlackoutEvents() {
+      const blackoutDates = schedulerConfig.blackoutDates || {};
+      const sortedKeys = Object.keys(blackoutDates).sort();
+      if (sortedKeys.length === 0) return [];
+
+      const groups = [];
+      let currentGroup = null;
+
+      sortedKeys.forEach(dateKey => {
+        const reason = blackoutDates[dateKey];
+        const curDate = new Date(dateKey + 'T00:00:00');
+
+        if (!currentGroup) {
+          currentGroup = {
+            startDate: dateKey,
+            endDate: dateKey,
+            reason: reason,
+            dates: [dateKey]
+          };
+        } else {
+          const prevDate = new Date(currentGroup.endDate + 'T00:00:00');
+          const diffDays = Math.round((curDate - prevDate) / (1000 * 60 * 60 * 24));
+
+          if (diffDays === 1 && currentGroup.reason === reason) {
+            currentGroup.endDate = dateKey;
+            currentGroup.dates.push(dateKey);
+          } else {
+            groups.push(currentGroup);
+            currentGroup = {
+              startDate: dateKey,
+              endDate: dateKey,
+              reason: reason,
+              dates: [dateKey]
+            };
+          }
+        }
+      });
+
+      if (currentGroup) {
+        groups.push(currentGroup);
+      }
+
+      return groups;
+    }
+
+    function removeBlackoutRange(dates, reasonName) {
+      const dateText = dates.length === 1 
+        ? dates[0] 
+        : `${dates[0]} ~ ${dates[dates.length - 1]} (${dates.length}일간)`;
+
+      if (confirm(`[${reasonName}] (${dateText}) 행사를 해제하고 일정을 다시 원복하시겠습니까?`)) {
+        dates.forEach(dk => {
+          delete schedulerConfig.blackoutDates[dk];
+        });
+        saveConfigData();
         generateDynamicSchedule();
         renderBlackoutList();
         renderCalendar();
         renderDateChips();
         renderDaySummary();
         renderTimeSlots();
-
-        showToast(`${dateKey} 행사가 해제되어 일정이 정상 복원되었습니다.`, '🔄');
+        showToast(`${dateText} [${reasonName}] 행사가 해제되어 일정이 정상 복원되었습니다.`, '🔄');
       }
+    }
+
+    function removeBlackoutDate(dateKey) {
+      const reason = schedulerConfig.blackoutDates ? schedulerConfig.blackoutDates[dateKey] : '행사';
+      removeBlackoutRange([dateKey], reason);
     }
 
     function renderBlackoutList() {
       const container = document.getElementById('blackoutListContainer');
       const countBadge = document.getElementById('blackoutCountBadge');
+      const pillsContainer = document.getElementById('blackoutYearPillsContainer');
+      const pastSection = document.getElementById('pastBlackoutSection');
+      const pastContainer = document.getElementById('pastBlackoutListContainer');
+      const pastTitle = document.getElementById('pastBlackoutTitleText');
+      const pastToggleIcon = document.getElementById('pastBlackoutToggleIcon');
+
+      if (!container) return;
       container.innerHTML = '';
+      if (pastContainer) pastContainer.innerHTML = '';
 
-      const keys = Object.keys(schedulerConfig.blackoutDates || {}).sort();
-      if (countBadge) countBadge.innerText = `총 ${keys.length}일 등록됨`;
+      const allGroups = getGroupedBlackoutEvents();
 
-      if (keys.length === 0) {
-        container.innerHTML = `<p class="text-slate-400 text-center py-2 text-[11px]">등록된 특별 행사일이 없습니다. (주일은 기본 제외됨)</p>`;
-        return;
+      // 1) 연도별 필터 버튼 동적 구성
+      const availableYears = new Set();
+      allGroups.forEach(g => {
+        availableYears.add(g.startDate.slice(0, 4));
+        availableYears.add(g.endDate.slice(0, 4));
+      });
+      if (availableYears.size === 0) {
+        availableYears.add('2026');
+      }
+      const sortedYears = Array.from(availableYears).sort();
+
+      if (pillsContainer) {
+        pillsContainer.innerHTML = '';
+        const yearOptions = ['ALL', ...sortedYears];
+
+        yearOptions.forEach(yr => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          const isActive = currentBlackoutYearFilter === yr;
+          btn.className = `px-2 py-0.5 rounded-md font-bold transition text-[10px] ${
+            isActive 
+              ? 'bg-amber-500 text-white shadow-2xs' 
+              : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-50'
+          }`;
+          btn.innerText = yr === 'ALL' ? '전체' : `${yr}년`;
+          btn.onclick = () => setBlackoutYearFilter(yr);
+          pillsContainer.appendChild(btn);
+        });
       }
 
-      keys.forEach(dateKey => {
-        const reason = schedulerConfig.blackoutDates[dateKey];
-        const row = document.createElement('div');
-        row.className = "flex items-center justify-between p-2 bg-amber-50/70 border border-amber-200 rounded-lg text-xs";
-        row.innerHTML = `
-          <div class="flex items-center space-x-2 truncate">
-            <span class="font-bold text-amber-900">${dateKey}</span>
-            <span class="text-slate-400">|</span>
-            <span class="font-semibold text-slate-800 truncate">${escapeHtml(reason)}</span>
-            <span class="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded font-bold shrink-0">연기됨</span>
-          </div>
-          <button onclick="removeBlackoutDate('${dateKey}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs p-1 shrink-0 ml-1">
-            해제 ✕
-          </button>
-        `;
-        container.appendChild(row);
+      // 2) 선택된 연도로 그룹 필터링
+      let filteredGroups = allGroups;
+      if (currentBlackoutYearFilter !== 'ALL') {
+        filteredGroups = allGroups.filter(g => 
+          g.startDate.startsWith(currentBlackoutYearFilter) || g.endDate.startsWith(currentBlackoutYearFilter)
+        );
+      }
+
+      const totalDays = filteredGroups.reduce((acc, g) => acc + g.dates.length, 0);
+      if (countBadge) {
+        countBadge.innerText = `${filteredGroups.length}건 (${totalDays}일)`;
+      }
+
+      // 3) 오늘 기준 예정/진행 중 vs 지난 행사 분리
+      const todayKey = getTodayDateKey();
+      const upcomingEvents = [];
+      const pastEvents = [];
+
+      filteredGroups.forEach(g => {
+        if (g.endDate < todayKey) {
+          pastEvents.push(g);
+        } else {
+          upcomingEvents.push(g);
+        }
       });
+
+      // 4) 예정/진행 중 행사 렌더링
+      if (upcomingEvents.length === 0) {
+        const yearPrefix = currentBlackoutYearFilter !== 'ALL' ? `${currentBlackoutYearFilter}년에 ` : '';
+        container.innerHTML = `<p class="text-slate-400 text-center py-2 text-[11px]">${yearPrefix}예정된 특별 행사가 없습니다.</p>`;
+      } else {
+        upcomingEvents.forEach(g => {
+          const isSingle = g.startDate === g.endDate;
+          const rangeText = isSingle ? g.startDate : `${g.startDate} ~ ${g.endDate.slice(5)}`;
+          const isOngoing = g.startDate <= todayKey && todayKey <= g.endDate;
+          const statusBadge = isOngoing 
+            ? `<span class="text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 px-1.5 py-0.2 rounded shrink-0 animate-pulse">진행 중</span>`
+            : `<span class="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 px-1.5 py-0.2 rounded shrink-0">연기 적용</span>`;
+          const durationBadge = `<span class="text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200/60 px-1.5 py-0.2 rounded-full shrink-0">${g.dates.length}일간</span>`;
+
+          const row = document.createElement('div');
+          row.className = "flex items-center justify-between p-2 bg-white border border-amber-200/90 rounded-xl text-xs hover:border-amber-300 transition shadow-2xs";
+          row.innerHTML = `
+            <div class="min-w-0 pr-2">
+              <div class="flex items-center space-x-1.5 flex-wrap gap-y-0.5">
+                <span class="font-black text-amber-950 text-xs tracking-tight">${rangeText}</span>
+                ${!isSingle ? durationBadge : ''}
+                ${statusBadge}
+              </div>
+              <p class="font-bold text-slate-800 text-xs mt-0.5 truncate">${escapeHtml(g.reason)}</p>
+            </div>
+            <button onclick='removeBlackoutRange(${JSON.stringify(g.dates)}, "${escapeHtml(g.reason)}")' class="text-rose-600 hover:text-rose-700 hover:bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg font-bold text-xs shrink-0 touch-bounce transition">
+              해제 ✕
+            </button>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      // 5) 지난 행사 아코디언 렌더링
+      if (pastSection && pastContainer) {
+        if (pastEvents.length > 0) {
+          pastSection.classList.remove('hidden');
+          const pastTotalDays = pastEvents.reduce((acc, g) => acc + g.dates.length, 0);
+          if (pastTitle) {
+            pastTitle.innerText = `지난 행사 (${pastEvents.length}건 / ${pastTotalDays}일)`;
+          }
+          if (pastToggleIcon) {
+            pastToggleIcon.innerText = showPastBlackouts ? '▲ 접기' : '▼ 펼치기';
+          }
+          if (showPastBlackouts) {
+            pastContainer.classList.remove('hidden');
+          } else {
+            pastContainer.classList.add('hidden');
+          }
+
+          pastEvents.forEach(g => {
+            const isSingle = g.startDate === g.endDate;
+            const rangeText = isSingle ? g.startDate : `${g.startDate} ~ ${g.endDate.slice(5)}`;
+            const row = document.createElement('div');
+            row.className = "flex items-center justify-between p-1.5 bg-slate-50/80 border border-slate-200/80 rounded-lg text-xs text-slate-500";
+            row.innerHTML = `
+              <div class="min-w-0 pr-2">
+                <div class="flex items-center space-x-1.5">
+                  <span class="font-bold text-slate-700 text-[11px]">${rangeText}</span>
+                  ${!isSingle ? `<span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded-full font-bold shrink-0">${g.dates.length}일간</span>` : ''}
+                  <span class="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded font-medium shrink-0">종료됨</span>
+                </div>
+                <p class="font-medium text-slate-600 text-[11px] truncate mt-0.5">${escapeHtml(g.reason)}</p>
+              </div>
+              <button onclick='removeBlackoutRange(${JSON.stringify(g.dates)}, "${escapeHtml(g.reason)}")' class="text-slate-400 hover:text-rose-600 hover:bg-rose-50 px-1.5 py-0.5 rounded text-[11px] font-semibold shrink-0 transition">
+                해제 ✕
+              </button>
+            `;
+            pastContainer.appendChild(row);
+          });
+        } else {
+          pastSection.classList.add('hidden');
+        }
+      }
     }
 
     // ========================================================
