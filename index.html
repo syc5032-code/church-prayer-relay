@@ -1076,8 +1076,56 @@
     }
 
     // ========================================================
-    // 3. 로컬 스토리지 데이터 로드 & 초기화
+    // 3. 스케줄러 설정 무결성 검증 및 자동 마이그레이션
     // ========================================================
+    function sanitizeSchedulerConfig(cfg) {
+      if (!cfg) return { config: cfg, modified: false };
+      let modified = false;
+
+      if (!cfg.startRound) {
+        cfg.startRound = 6;
+        modified = true;
+      }
+      if (!cfg.totalDays || cfg.totalDays < 365) {
+        cfg.totalDays = 365;
+        modified = true;
+      }
+      if (!cfg.dateNotices) {
+        cfg.dateNotices = {};
+        modified = true;
+      }
+      if (cfg.excludeSunday === undefined) {
+        cfg.excludeSunday = true;
+        modified = true;
+      }
+      // 대한민국 법정 공휴일 쉼 설정: 클라우드/로컬에 키가 없으면 기본값 true로 활성화
+      if (cfg.excludeHoliday === undefined) {
+        cfg.excludeHoliday = true;
+        modified = true;
+      }
+      if (cfg.leaderQueue && Array.isArray(cfg.leaderQueue)) {
+        cfg.leaderQueue.forEach(item => {
+          if (typeof item === 'object' && item !== null) {
+            if (item.role === '군단리더' || item.role === '어른 리더' || !item.role) {
+              item.role = '리더';
+              modified = true;
+            }
+          }
+        });
+
+        const hasChoi = cfg.leaderQueue.some(item => {
+          const n = typeof item === 'object' && item !== null ? item.name : item;
+          return n === '최순호';
+        });
+        if (!hasChoi) {
+          cfg.leaderQueue.push({ name: "최순호", role: "리더" });
+          modified = true;
+        }
+      }
+
+      return { config: cfg, modified };
+    }
+
     function initData() {
       const savedConfig = localStorage.getItem(STORAGE_KEY_CONFIG);
       if (savedConfig) {
@@ -1107,55 +1155,16 @@
           excludeSunday: true,
           excludeHoliday: true,
           leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
-          blackoutDates: oldBlackouts
+          blackoutDates: oldBlackouts,
+          dateNotices: {}
         };
         saveConfigData();
       }
 
-      if (schedulerConfig && !schedulerConfig.startRound) {
-        schedulerConfig.startRound = 6;
-      }
-
-      // 1년치(365일) 미만으로 저장되어 있던 기존 설정 자동 확장 (2027년 8월 18차 순환까지)
-      if (schedulerConfig && (!schedulerConfig.totalDays || schedulerConfig.totalDays < 365)) {
-        schedulerConfig.totalDays = 365;
+      const { config: cleanConfig, modified } = sanitizeSchedulerConfig(schedulerConfig);
+      schedulerConfig = cleanConfig;
+      if (modified) {
         saveConfigData();
-      }
-
-      // 장소 안내 공지 객체 초기화
-      if (schedulerConfig && !schedulerConfig.dateNotices) {
-        schedulerConfig.dateNotices = {};
-      }
-
-      // 대한민국 법정 공휴일 쉼 설정 기본 초기화
-      if (schedulerConfig && schedulerConfig.excludeHoliday === undefined) {
-        schedulerConfig.excludeHoliday = true;
-      }
-
-      // 리더 역할 동기화 (군단리더/어른 리더 -> 리더 전환) 및 최순호 추가
-      if (schedulerConfig && schedulerConfig.leaderQueue) {
-        let queueModified = false;
-        schedulerConfig.leaderQueue.forEach(item => {
-          if (typeof item === 'object' && item !== null) {
-            if (item.role === '군단리더' || item.role === '어른 리더' || !item.role) {
-              item.role = '리더';
-              queueModified = true;
-            }
-          }
-        });
-
-        const hasChoi = schedulerConfig.leaderQueue.some(item => {
-          const n = typeof item === 'object' && item !== null ? item.name : item;
-          return n === '최순호';
-        });
-        if (!hasChoi) {
-          schedulerConfig.leaderQueue.push({ name: "최순호", role: "리더" });
-          queueModified = true;
-        }
-
-        if (queueModified) {
-          saveConfigData();
-        }
       }
 
       generateDynamicSchedule();
@@ -1208,7 +1217,7 @@
 
     function saveConfigData(syncToCloud = true) {
       localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
-      if (syncToCloud && isCloudConnected && supabaseClient) {
+      if (syncToCloud && supabaseClient) {
         supabaseClient.from('relay_config').upsert({
           id: 'main_config',
           config_data: schedulerConfig,
@@ -3464,12 +3473,19 @@
           .maybeSingle();
 
         if (configRows && configRows.config_data) {
-          schedulerConfig = configRows.config_data;
-          if (!schedulerConfig.startRound) {
-            schedulerConfig.startRound = 6;
-          }
+          const { config: cleanConfig, modified } = sanitizeSchedulerConfig(configRows.config_data);
+          schedulerConfig = cleanConfig;
           localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
           generateDynamicSchedule();
+          if (modified && supabaseClient) {
+            supabaseClient.from('relay_config').upsert({
+              id: 'main_config',
+              config_data: schedulerConfig,
+              updated_at: new Date().toISOString()
+            }).then(({ error }) => {
+              if (error) console.error('Supabase config auto-migration sync error:', error);
+            });
+          }
         }
 
         renderCalendar();
@@ -3531,13 +3547,21 @@
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'relay_config' }, (payload) => {
           if (payload.new && payload.new.config_data) {
-            schedulerConfig = payload.new.config_data;
+            const { config: cleanConfig, modified } = sanitizeSchedulerConfig(payload.new.config_data);
+            schedulerConfig = cleanConfig;
             localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(schedulerConfig));
             generateDynamicSchedule();
             renderCalendar();
             renderDateChips();
             renderDaySummary();
             renderTimeSlots();
+            if (modified && supabaseClient) {
+              supabaseClient.from('relay_config').upsert({
+                id: 'main_config',
+                config_data: schedulerConfig,
+                updated_at: new Date().toISOString()
+              }).catch(e => console.error(e));
+            }
           }
         })
         .subscribe((status) => {
