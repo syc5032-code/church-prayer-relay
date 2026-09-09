@@ -174,7 +174,7 @@
       <!-- 배경 장식 -->
       <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-indigo-50 rounded-full opacity-30 pointer-events-none -z-0"></div>
 
-      <!-- 1열: 날짜/일차 & 달성률/커버시간 -->
+      <!-- 1열: 날짜/일차 & 달성률/기도채움 -->
       <div class="relative z-10 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-1.5 flex-wrap gap-y-1 min-w-0">
           <span id="curTodayTagBadge" class="hidden text-[10px] bg-rose-500 text-white font-black px-1.5 py-0.5 rounded-full animate-pulse shrink-0">오늘</span>
@@ -184,7 +184,7 @@
 
         <div class="text-right shrink-0 flex items-baseline space-x-1.5" id="summaryStatsRight">
           <span class="text-2xl font-black text-indigo-600 leading-none" id="curProgressRatio">0%</span>
-          <span class="text-[11px] font-semibold text-slate-500 whitespace-nowrap" id="curSlotCount">0/24시간 달성</span>
+          <span class="text-[11px] font-semibold text-slate-500 whitespace-nowrap" id="curSlotCount">0/24시간 채움</span>
         </div>
       </div>
 
@@ -207,10 +207,10 @@
       <!-- 2개 지표: 채워진 시간 vs 총 참여 인원수 -->
       <div id="statsTwoBox" class="relative z-10 mt-3 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
         <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
-          <div class="text-[10px] text-slate-400 font-medium truncate">24시간 연속 달성</div>
+          <div class="text-[10px] text-slate-400 font-medium truncate">24시간 연속 기도</div>
           <div class="flex items-center space-x-1 mt-0.5">
             <span class="w-2 h-2 rounded-full bg-amber-400 shrink-0"></span>
-            <span class="font-bold text-slate-800 text-xs truncate">남은 공백: <strong id="emptySlotCount" class="text-amber-600">24</strong>시간</span>
+            <span class="font-bold text-slate-800 text-xs truncate">남은 빈 시간: <strong id="emptySlotCount" class="text-amber-600">24</strong>시간</span>
           </div>
         </div>
         <div class="bg-slate-50 p-2 rounded-xl border border-slate-100">
@@ -1265,7 +1265,7 @@
       const pct = Math.round((coveredHours / 24) * 100);
 
       progressRatio.innerText = `${pct}%`;
-      slotCount.innerText = `${coveredHours}/24시간 달성`;
+      slotCount.innerText = `${coveredHours}/24시간 채움`;
       progressBar.style.width = `${pct}%`;
       emptySlotCount.innerText = emptyCount;
       totalParticipantCount.innerText = totalPrayers;
@@ -1557,7 +1557,7 @@
       let text = `[🔥 뉴사운드교회 성전 릴레이기도 현황]\n`;
       text += `📅 일정: ${item.dayNum}일차 (${item.date})\n`;
       text += `👤 담당: ${item.leader} ${item.role || '군단리더'} (${item.round}차 순환 ${item.turnInCycle}/${item.totalInCycle || 25}번째)\n`;
-      text += `📊 24시간 커버: ${coveredHours}/24시간 (${pct}% 달성)\n`;
+      text += `📊 기도 진행: ${coveredHours}/24시간 (${pct}% 달성)\n`;
       text += `👥 총 기도 참여자: ${totalPrayers}명 참여 중!\n\n`;
 
       if (emptyList.length > 0) {
@@ -2022,7 +2022,7 @@
               <span class="font-bold text-slate-800">${item.date}</span>
               <span class="text-[10px] text-slate-500">${item.leader}</span>
             </div>
-            <div class="text-[10px] text-slate-400 mt-0.5">${covered}/24시간 커버 • ${total}명 참여</div>
+            <div class="text-[10px] text-slate-400 mt-0.5">${covered}/24시간 채움 • ${total}명 참여</div>
           </div>
           <div class="text-right">
             <span class="text-sm font-black ${covered === 24 ? 'text-emerald-600' : 'text-indigo-600'}">${pct}%</span>
