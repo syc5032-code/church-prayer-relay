@@ -230,10 +230,10 @@
       <!-- 2열: 담당 리더 & 순환 차수/순번 -->
       <div class="relative z-10 mt-2.5 pt-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
         <div class="flex items-center space-x-2 min-w-0">
-          <h2 id="curLeaderText" class="text-lg font-black text-slate-900 tracking-tight truncate">천시온</h2>
+          <h2 id="curLeaderText" class="text-lg font-black text-slate-900 tracking-tight truncate">최순호</h2>
           <span id="curLeaderRoleBadge" class="text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded shrink-0">리더 담당</span>
         </div>
-        <span id="curRoundBadge" class="text-xs bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-md border border-purple-100 shrink-0 whitespace-nowrap">6차 순환 (20/25번째)</span>
+        <span id="curRoundBadge" class="text-xs bg-purple-50 text-purple-700 font-bold px-2 py-0.5 rounded-md border border-purple-100 shrink-0 whitespace-nowrap">7차 순환 (1/25번째)</span>
       </div>
 
       <!-- 진행률 바 -->
@@ -1120,9 +1120,9 @@
     let isCloudConnected = false;
 
     let schedulerConfig = {
-      startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
-      startDayNum: 134,        // 134일차
-      startRound: 6,           // 6차 순환부터 시작
+      startDate: "2026-09-16", // 2026년 9월 16일 (수요일) 7차 시작일
+      startDayNum: 159,        // 159일차
+      startRound: 7,           // 7차 순환 시작
       maxRound: 7,             // 7차 순환까지 등록 (8차부터 일정 없음 대기)
       totalDays: 365,          // 1년 분량 달력 그리드 지원
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
@@ -1144,7 +1144,7 @@
     
     let currentCalendarYear = 2026;
     let currentCalendarMonth = 9;   // 기본 9월
-    let selectedDateKey = "2026-09-09"; // 오늘 (9/9) 기본 선택
+    let selectedDateKey = "2026-09-16"; // 7차 시작일 (9/16) 기본 선택
     
     let isAdminMode = false;
     let currentTimeFilter = 'all';
@@ -1266,31 +1266,13 @@
             // ⭐️ leaderIdx와 dayNum을 증가시키지 않아 뒷 일정이 그대로 유지됨!
           } else {
             // [방식 A: 정규 릴레이 순환 편입 (뒷 일정 연쇄 밀림)]
-            let round, turnInCycle, totalInCycle, qItem;
-            const q7 = (schedulerConfig.leaderQueue && schedulerConfig.leaderQueue.length > 0) ? schedulerConfig.leaderQueue : DEFAULT_CYCLE_7_QUEUE;
-
-            if (leaderIdx < ROUND_6_QUEUE.length) {
-              // 6차 순환 (134일차 ~ 158일차)
-              round = 6;
-              turnInCycle = leaderIdx + 1;
-              totalInCycle = ROUND_6_QUEUE.length;
-              qItem = ROUND_6_QUEUE[leaderIdx];
-            } else if (leaderIdx < ROUND_6_QUEUE.length + q7.length) {
-              // 7차 순환 (159일차 ~ 183일차)
-              round = 7;
-              const idxInCycle = leaderIdx - ROUND_6_QUEUE.length;
-              turnInCycle = idxInCycle + 1;
-              totalInCycle = q7.length;
-              qItem = q7[idxInCycle];
-            } else {
-              // 8차 순환 이후 (추후 확장 가능)
-              const rem = leaderIdx - ROUND_6_QUEUE.length - q7.length;
-              round = 8 + Math.floor(rem / q7.length);
-              turnInCycle = (rem % q7.length) + 1;
-              totalInCycle = q7.length;
-              qItem = q7[rem % q7.length];
-            }
-
+            const qLength = schedulerConfig.leaderQueue.length;
+            const turnInCycle = (leaderIdx % qLength) + 1;
+            const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
+            const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
+            const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
+            const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 7;
+            const round = Math.floor(leaderIdx / qLength) + startRound;
             const maxRound = (schedulerConfig.maxRound !== undefined && schedulerConfig.maxRound !== null) ? Number(schedulerConfig.maxRound) : 7;
 
             if (maxRound !== null && round > maxRound) {
@@ -1314,9 +1296,6 @@
               continue;
             }
 
-            const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
-            const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
-
             const item = {
               isPrayerDay: true,
               isHoliday: isHolidayDate,
@@ -1333,7 +1312,7 @@
               role: leaderRole,
               round: round,
               turnInCycle: turnInCycle,
-              totalInCycle: totalInCycle
+              totalInCycle: qLength
             };
 
             calendarDaysMap[dateKey] = item;
@@ -1355,8 +1334,17 @@
       if (!cfg) return { config: cfg, modified: false };
       let modified = false;
 
-      if (!cfg.startRound) {
-        cfg.startRound = 6;
+      // 6차 데이터 삭제 및 7차 시작으로 전면 전환
+      if (!cfg.startRound || cfg.startRound < 7) {
+        cfg.startRound = 7;
+        modified = true;
+      }
+      if (cfg.startDate !== "2026-09-16") {
+        cfg.startDate = "2026-09-16";
+        modified = true;
+      }
+      if (!cfg.startDayNum || cfg.startDayNum < 159) {
+        cfg.startDayNum = 159;
         modified = true;
       }
       if (cfg.maxRound === undefined || cfg.maxRound < 7) {
@@ -1375,7 +1363,6 @@
         cfg.excludeSunday = true;
         modified = true;
       }
-      // 대한민국 법정 공휴일 쉼 설정: 클라우드/로컬에 키가 없으면 기본값 true로 활성화
       if (cfg.excludeHoliday === undefined) {
         cfg.excludeHoliday = true;
         modified = true;
@@ -1393,14 +1380,24 @@
         }
       });
 
-      // 7차 리더 큐 자동 마이그레이션 (이전 6차 큐이거나 7차 신규 리더인 전성령/차재아가 없는 경우 최신 7차 큐로 동기화)
+      // 기존 6차에 남아있던 잘못된 blackoutDates (예: 10/8~10/10 청년부 MT) 정리
+      if (cfg.blackoutDates) {
+        ["2026-10-08", "2026-10-09", "2026-10-10"].forEach(d => {
+          if (cfg.blackoutDates[d]) {
+            delete cfg.blackoutDates[d];
+            modified = true;
+          }
+        });
+      }
+
+      // 7차 리더 큐 자동 마이그레이션
       if (cfg.leaderQueue && Array.isArray(cfg.leaderQueue)) {
         const hasRound7Leader = cfg.leaderQueue.some(item => {
           const n = typeof item === 'object' && item !== null ? item.name : item;
           return n === '전성령' || n === '차재아';
         });
 
-        if (!hasRound7Leader) {
+        if (!hasRound7Leader || cfg.leaderQueue.length !== DEFAULT_CYCLE_7_QUEUE.length) {
           cfg.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_7_QUEUE));
           modified = true;
         } else {
@@ -1432,25 +1429,22 @@
       }
 
       if (!schedulerConfig || !schedulerConfig.leaderQueue || schedulerConfig.leaderQueue.length === 0) {
-        let oldBlackouts = {};
-        const oldPrevStr = localStorage.getItem('NEWSOUND_SCHEDULER_CONFIG_V4') || localStorage.getItem('NEWSOUND_SCHEDULER_CONFIG_V3');
-        if (oldPrevStr) {
-          try {
-            const oldConf = JSON.parse(oldPrevStr);
-            if (oldConf.blackoutDates) oldBlackouts = oldConf.blackoutDates;
-          } catch(e){}
-        }
-
         schedulerConfig = {
-          startDate: "2026-08-18",
-          startDayNum: 134,
-          startRound: 6,
+          startDate: "2026-09-16",
+          startDayNum: 159,
+          startRound: 7,
+          maxRound: 7,
           totalDays: 365,
           excludeFriday: false,
           excludeSunday: true,
           excludeHoliday: true,
-          leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
-          blackoutDates: oldBlackouts,
+          holidayOverrides: {
+            "2026-10-03": "shift",
+            "2026-10-05": "shift",
+            "2026-10-09": "shift"
+          },
+          leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_7_QUEUE)),
+          blackoutDates: {},
           dateNotices: {}
         };
         saveConfigData();
@@ -1472,36 +1466,14 @@
           prayerData = {};
         }
       } else {
-        // 오늘(153일차 천시온) 및 134일차 샘플 데이터
-        prayerData = {
-          "153": {
-            "0": [
-              { id: "s1", name: "천시온", cell: "천시온셀", pin: "0000", bookedAt: new Date().toISOString() },
-              { id: "s2", name: "박소망", cell: "천시온셀", pin: "1234", bookedAt: new Date().toISOString() }
-            ],
-            "6": [
-              { id: "s3", name: "김하늘", cell: "김은진셀", pin: "1234", bookedAt: new Date().toISOString() }
-            ],
-            "12": [
-              { id: "s4", name: "이지은", cell: "김태홍셀", pin: "1234", bookedAt: new Date().toISOString() }
-            ],
-            "21": [
-              { id: "s5", name: "최은혜", cell: "천시온셀", pin: "1234", bookedAt: new Date().toISOString() }
-            ]
-          },
-          "134": {
-            "0": [
-              { id: "s6", name: "김용태", cell: "김용태셀", pin: "0000", bookedAt: new Date().toISOString() }
-            ]
-          }
-        };
-        savePrayerData();
+        prayerData = {};
       }
 
-      // 8차 순환(184일차) 이후 등록된 임의의 기도 데이터 자동 정리
+      // 6차(159일차 미만) 및 8차(184일차 이상) 등록된 기도 데이터 완전 삭제
       let prayerDataCleaned = false;
       Object.keys(prayerData).forEach(d => {
-        if (parseInt(d, 10) >= 184) {
+        const dNum = parseInt(d, 10);
+        if (dNum < 159 || dNum >= 184) {
           delete prayerData[d];
           prayerDataCleaned = true;
         }
@@ -4111,7 +4083,8 @@
         if (bookings) {
           const newPrayerData = {};
           bookings.forEach(b => {
-            if (parseInt(b.day_num, 10) >= 184) return;
+            const dNum = parseInt(b.day_num, 10);
+            if (dNum < 159 || dNum >= 184) return;
             const dStr = b.day_num.toString();
             const hStr = b.hour.toString();
             if (!newPrayerData[dStr]) newPrayerData[dStr] = {};
@@ -4173,7 +4146,8 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_bookings' }, (payload) => {
           const { eventType, new: newRec, old: oldRec } = payload;
           if (eventType === 'INSERT') {
-            if (parseInt(newRec.day_num, 10) >= 184) return;
+            const dNum = parseInt(newRec.day_num, 10);
+            if (dNum < 159 || dNum >= 184) return;
             const dStr = newRec.day_num.toString();
             const hStr = newRec.hour.toString();
             if (!prayerData[dStr]) prayerData[dStr] = {};

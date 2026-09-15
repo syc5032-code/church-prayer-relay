@@ -67,9 +67,9 @@ INSERT INTO public.relay_config (id, config_data, updated_at)
 VALUES (
   'main_config',
   '{
-    "startDate": "2026-08-18",
-    "startDayNum": 134,
-    "startRound": 6,
+    "startDate": "2026-09-16",
+    "startDayNum": 159,
+    "startRound": 7,
     "maxRound": 7,
     "totalDays": 120,
     "excludeFriday": false,
