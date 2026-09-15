@@ -1,5 +1,5 @@
 -- ========================================================
--- 뉴사운드교회 6차 성전 릴레이기도 Supabase 클라우드 스키마
+-- 뉴사운드교회 7차 성전 릴레이기도 Supabase 클라우드 스키마
 -- Supabase 대시보드 -> SQL Editor에 붙여넣고 [Run]을 누르세요.
 -- ========================================================
 
@@ -70,35 +70,42 @@ VALUES (
     "startDate": "2026-08-18",
     "startDayNum": 134,
     "startRound": 6,
+    "maxRound": 7,
     "totalDays": 120,
     "excludeFriday": false,
     "excludeSunday": true,
+    "excludeHoliday": true,
+    "holidayOverrides": {
+      "2026-10-03": "shift",
+      "2026-10-05": "shift",
+      "2026-10-09": "shift"
+    },
     "leaderQueue": [
-      { "name": "김용태", "role": "군단리더" },
-      { "name": "이연경", "role": "군단리더" },
-      { "name": "박진호", "role": "군단리더" },
-      { "name": "김은진", "role": "군단리더", "note": "1차" },
-      { "name": "이성령", "role": "군단리더" },
-      { "name": "김태홍", "role": "군단리더", "note": "1차" },
-      { "name": "천은빈", "role": "군단리더" },
+      { "name": "최순호", "role": "리더" },
+      { "name": "김우람", "role": "리더" },
+      { "name": "전성령", "role": "리더" },
+      { "name": "김태홍", "role": "리더", "note": "1차" },
+      { "name": "장한나", "role": "리더" },
+      { "name": "김은진", "role": "리더", "note": "1차" },
+      { "name": "김정금", "role": "리더" },
+      { "name": "차재아", "role": "리더" },
+      { "name": "이성재", "role": "리더" },
+      { "name": "김은진", "role": "리더", "note": "2차" },
+      { "name": "천시온", "role": "리더" },
       { "name": "유정심", "role": "리더" },
-      { "name": "서진환", "role": "군단리더" },
-      { "name": "최윤석", "role": "군단리더" },
-      { "name": "김우람", "role": "군단리더" },
-      { "name": "김은진", "role": "군단리더", "note": "2차" },
-      { "name": "강수오", "role": "군단리더" },
-      { "name": "김정금", "role": "군단리더" },
-      { "name": "이성재", "role": "군단리더" },
-      { "name": "김태홍", "role": "군단리더", "note": "2차" },
-      { "name": "라하라", "role": "군단리더" },
-      { "name": "김은진", "role": "군단리더", "note": "3차" },
-      { "name": "장한나", "role": "군단리더" },
-      { "name": "천시온", "role": "군단리더" },
-      { "name": "곽신재", "role": "군단리더" },
-      { "name": "이정화", "role": "군단리더" },
-      { "name": "김성현", "role": "군단리더" },
-      { "name": "류고운", "role": "군단리더" },
-      { "name": "최순호", "role": "군단리더" }
+      { "name": "김성현", "role": "리더" },
+      { "name": "라하라", "role": "리더" },
+      { "name": "박진호", "role": "리더" },
+      { "name": "류고운", "role": "리더" },
+      { "name": "강수오", "role": "리더" },
+      { "name": "서진환", "role": "리더" },
+      { "name": "이연경", "role": "리더" },
+      { "name": "김용태", "role": "리더" },
+      { "name": "천은빈", "role": "리더" },
+      { "name": "이정화", "role": "리더" },
+      { "name": "최윤석", "role": "리더" },
+      { "name": "김태홍", "role": "리더", "note": "2차" },
+      { "name": "이성령", "role": "리더" }
     ],
     "blackoutDates": {}
   }'::jsonb,

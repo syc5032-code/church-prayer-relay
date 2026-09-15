@@ -555,15 +555,15 @@
             <span id="currentGeneratedRangeText" class="text-[10px] text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded-md font-bold">~ 계산 중...</span>
           </div>
           <p class="text-[11px] text-slate-500 leading-relaxed">
-            • 현재 <strong>6차 순환</strong>까지만 등록되어 있습니다.<br>
-            • 다음 차수(7차, 8차...)를 이어서 추가하거나 일정을 연장하려면 아래 버튼을 누르세요.
+            • 현재 <strong>7차 순환</strong>까지만 등록되어 있습니다.<br>
+            • 다음 차수(8차, 9차...)를 이어서 추가하거나 일정을 연장하려면 아래 버튼을 누르세요.
           </p>
           <div class="grid grid-cols-2 gap-2 pt-1">
             <button onclick="extendScheduleDays(30)" class="py-2.5 px-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs touch-bounce flex items-center justify-center space-x-1">
               <span>➕</span> <span>다음 회차 추가</span>
             </button>
-            <button onclick="resetToRound6()" class="py-2.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 text-xs touch-bounce flex items-center justify-center space-x-1">
-              <span>🗑️</span> <span>7차 이후 일정 삭제</span>
+            <button onclick="resetToRound7()" class="py-2.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 text-xs touch-bounce flex items-center justify-center space-x-1">
+              <span>🗑️</span> <span>8차 이후 일정 삭제</span>
             </button>
           </div>
         </div>
@@ -982,8 +982,8 @@
   <!-- JavaScript 로직 (2026년 동기화 & 스마트 스케줄러) -->
   <!-- ======================================================== -->
   <script>
-    // 6차 릴레이 공식 기본 25순번 (김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함)
-    const DEFAULT_CYCLE_QUEUE = [
+    // 6차 릴레이 공식 기본 25순번 (2026.08.18 ~ 2026.09.15, 134일차 ~ 158일차)
+    const ROUND_6_QUEUE = [
       { name: "김용태", role: "리더" },
       { name: "이연경", role: "리더" },
       { name: "박진호", role: "리더" },
@@ -1010,6 +1010,37 @@
       { name: "류고운", role: "리더" },
       { name: "최순호", role: "리더" }
     ];
+
+    // 🔥 7차 릴레이 공식 25순번 (2026.09.16 ~ 2026.10.17, 159일차 ~ 183일차)
+    const DEFAULT_CYCLE_7_QUEUE = [
+      { name: "최순호", role: "리더" },
+      { name: "김우람", role: "리더" },
+      { name: "전성령", role: "리더" },
+      { name: "김태홍", role: "리더", note: "1차" },
+      { name: "장한나", role: "리더" },
+      { name: "김은진", role: "리더", note: "1차" },
+      { name: "김정금", role: "리더" },
+      { name: "차재아", role: "리더" },
+      { name: "이성재", role: "리더" },
+      { name: "김은진", role: "리더", note: "2차" },
+      { name: "천시온", role: "리더" },
+      { name: "유정심", role: "리더" },
+      { name: "김성현", role: "리더" },
+      { name: "라하라", role: "리더" },
+      { name: "박진호", role: "리더" },
+      { name: "류고운", role: "리더" },
+      { name: "강수오", role: "리더" },
+      { name: "서진환", role: "리더" },
+      { name: "이연경", role: "리더" },
+      { name: "김용태", role: "리더" },
+      { name: "천은빈", role: "리더" },
+      { name: "이정화", role: "리더" },
+      { name: "최윤석", role: "리더" },
+      { name: "김태홍", role: "리더", note: "2차" },
+      { name: "이성령", role: "리더" }
+    ];
+
+    const DEFAULT_CYCLE_QUEUE = DEFAULT_CYCLE_7_QUEUE;
 
     // 대한민국 법정 공휴일 및 대체공휴일 공식 달력 (2026년~2028년)
     const KOREAN_HOLIDAYS = {
@@ -1092,11 +1123,16 @@
       startDate: "2026-08-18", // 2026년 8월 18일 (화요일) 시작일
       startDayNum: 134,        // 134일차
       startRound: 6,           // 6차 순환부터 시작
-      maxRound: 6,             // 6차 순환까지만 등록 (7차부터 일정 삭제)
+      maxRound: 7,             // 7차 순환까지 등록 (8차부터 일정 없음 대기)
       totalDays: 365,          // 1년 분량 달력 그리드 지원
       excludeFriday: false,    // 금요일도 릴레이 기도 정상 배정 (철야와 병행)
       excludeSunday: true,     // 주일예배 쉼 (자동 건너뜀)
       excludeHoliday: true,    // 🇰🇷 대한민국 공휴일 및 대체공휴일 쉼 (자동 건너뜀)
+      holidayOverrides: {
+        "2026-10-03": "shift", // 개천절 정규 릴레이 기도 진행 (171일차 김성현)
+        "2026-10-05": "shift", // 개천절 대체공휴일 정규 릴레이 기도 진행 (172일차 라하라)
+        "2026-10-09": "shift"  // 한글날 정규 릴레이 기도 진행 (176일차 서진환)
+      },
       leaderQueue: JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE)),
       blackoutDates: {},
       dateNotices: {}
@@ -1230,17 +1266,35 @@
             // ⭐️ leaderIdx와 dayNum을 증가시키지 않아 뒷 일정이 그대로 유지됨!
           } else {
             // [방식 A: 정규 릴레이 순환 편입 (뒷 일정 연쇄 밀림)]
-            const qLength = schedulerConfig.leaderQueue.length;
-            const turnInCycle = (leaderIdx % qLength) + 1;
-            const qItem = schedulerConfig.leaderQueue[leaderIdx % qLength];
-            const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
-            const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
-            const startRound = (schedulerConfig.startRound !== undefined && schedulerConfig.startRound !== null) ? Number(schedulerConfig.startRound) : 6;
-            const round = Math.floor(leaderIdx / qLength) + startRound;
-            const maxRound = (schedulerConfig.maxRound !== undefined && schedulerConfig.maxRound !== null) ? Number(schedulerConfig.maxRound) : 6;
+            let round, turnInCycle, totalInCycle, qItem;
+            const q7 = (schedulerConfig.leaderQueue && schedulerConfig.leaderQueue.length > 0) ? schedulerConfig.leaderQueue : DEFAULT_CYCLE_7_QUEUE;
+
+            if (leaderIdx < ROUND_6_QUEUE.length) {
+              // 6차 순환 (134일차 ~ 158일차)
+              round = 6;
+              turnInCycle = leaderIdx + 1;
+              totalInCycle = ROUND_6_QUEUE.length;
+              qItem = ROUND_6_QUEUE[leaderIdx];
+            } else if (leaderIdx < ROUND_6_QUEUE.length + q7.length) {
+              // 7차 순환 (159일차 ~ 183일차)
+              round = 7;
+              const idxInCycle = leaderIdx - ROUND_6_QUEUE.length;
+              turnInCycle = idxInCycle + 1;
+              totalInCycle = q7.length;
+              qItem = q7[idxInCycle];
+            } else {
+              // 8차 순환 이후 (추후 확장 가능)
+              const rem = leaderIdx - ROUND_6_QUEUE.length - q7.length;
+              round = 8 + Math.floor(rem / q7.length);
+              turnInCycle = (rem % q7.length) + 1;
+              totalInCycle = q7.length;
+              qItem = q7[rem % q7.length];
+            }
+
+            const maxRound = (schedulerConfig.maxRound !== undefined && schedulerConfig.maxRound !== null) ? Number(schedulerConfig.maxRound) : 7;
 
             if (maxRound !== null && round > maxRound) {
-              // ⭐️ 6차 순환 종료 후 (7차 순환부터는 아직 미등록 상태)
+              // ⭐️ 7차 순환 종료 후 (8차 순환부터는 아직 미등록 상태)
               const item = {
                 isPrayerDay: false,
                 dateKey: dateKey,
@@ -1260,6 +1314,9 @@
               continue;
             }
 
+            const leaderName = typeof qItem === 'object' && qItem !== null ? qItem.name : qItem;
+            const leaderRole = typeof qItem === 'object' && qItem !== null && qItem.role ? (qItem.role === '군단리더' ? '리더' : qItem.role) : '리더';
+
             const item = {
               isPrayerDay: true,
               isHoliday: isHolidayDate,
@@ -1276,7 +1333,7 @@
               role: leaderRole,
               round: round,
               turnInCycle: turnInCycle,
-              totalInCycle: qLength
+              totalInCycle: totalInCycle
             };
 
             calendarDaysMap[dateKey] = item;
@@ -1302,8 +1359,8 @@
         cfg.startRound = 6;
         modified = true;
       }
-      if (cfg.maxRound === undefined) {
-        cfg.maxRound = 6;
+      if (cfg.maxRound === undefined || cfg.maxRound < 7) {
+        cfg.maxRound = 7;
         modified = true;
       }
       if (!cfg.totalDays || cfg.totalDays < 365) {
@@ -1327,24 +1384,38 @@
         cfg.holidayOverrides = {};
         modified = true;
       }
-      if (cfg.leaderQueue && Array.isArray(cfg.leaderQueue)) {
-        cfg.leaderQueue.forEach(item => {
-          if (typeof item === 'object' && item !== null) {
-            if (item.role === '군단리더' || item.role === '어른 리더' || !item.role) {
-              item.role = '리더';
-              modified = true;
-            }
-          }
-        });
 
-        const hasChoi = cfg.leaderQueue.some(item => {
-          const n = typeof item === 'object' && item !== null ? item.name : item;
-          return n === '최순호';
-        });
-        if (!hasChoi) {
-          cfg.leaderQueue.push({ name: "최순호", role: "리더" });
+      // 7차 공휴일 정규 릴레이 기도 진행 오버라이드 (10/3 개천절, 10/5 개천절 대체공휴일, 10/9 한글날)
+      ["2026-10-03", "2026-10-05", "2026-10-09"].forEach(d => {
+        if (!cfg.holidayOverrides[d]) {
+          cfg.holidayOverrides[d] = 'shift';
           modified = true;
         }
+      });
+
+      // 7차 리더 큐 자동 마이그레이션 (이전 6차 큐이거나 7차 신규 리더인 전성령/차재아가 없는 경우 최신 7차 큐로 동기화)
+      if (cfg.leaderQueue && Array.isArray(cfg.leaderQueue)) {
+        const hasRound7Leader = cfg.leaderQueue.some(item => {
+          const n = typeof item === 'object' && item !== null ? item.name : item;
+          return n === '전성령' || n === '차재아';
+        });
+
+        if (!hasRound7Leader) {
+          cfg.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_7_QUEUE));
+          modified = true;
+        } else {
+          cfg.leaderQueue.forEach(item => {
+            if (typeof item === 'object' && item !== null) {
+              if (item.role === '군단리더' || item.role === '어른 리더' || !item.role) {
+                item.role = '리더';
+                modified = true;
+              }
+            }
+          });
+        }
+      } else {
+        cfg.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_7_QUEUE));
+        modified = true;
       }
 
       return { config: cfg, modified };
@@ -1427,10 +1498,10 @@
         savePrayerData();
       }
 
-      // 7차 순환(159일차) 이후 등록된 기도 데이터 자동 정리
+      // 8차 순환(184일차) 이후 등록된 임의의 기도 데이터 자동 정리
       let prayerDataCleaned = false;
       Object.keys(prayerData).forEach(d => {
-        if (parseInt(d, 10) >= 159) {
+        if (parseInt(d, 10) >= 184) {
           delete prayerData[d];
           prayerDataCleaned = true;
         }
@@ -1764,6 +1835,12 @@
 
       const uniqueLeaders = [];
       const seen = new Set();
+      prayerDaysList.forEach(item => {
+        if (item.leader && !seen.has(item.leader)) {
+          seen.add(item.leader);
+          uniqueLeaders.push({ name: item.leader, role: item.role || '리더' });
+        }
+      });
       schedulerConfig.leaderQueue.forEach(q => {
         const name = typeof q === 'object' && q !== null ? q.name : q;
         const role = typeof q === 'object' && q !== null && q.role ? (q.role === '군단리더' ? '리더' : q.role) : '리더';
@@ -2074,7 +2151,7 @@
           leaderRoleBadge.className = "text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200";
           leaderRoleBadge.innerText = "차수 미정";
           document.getElementById('blackoutNoticeTitle').innerText = "등록된 릴레이 기도가 없습니다";
-          document.getElementById('blackoutNoticeDesc').innerText = "해당 일자는 아직 릴레이 기도 일정이 배정되지 않았습니다. (현재 6차 순환까지 등록 완료)";
+          document.getElementById('blackoutNoticeDesc').innerText = "해당 일자는 아직 릴레이 기도 일정이 배정되지 않았습니다. (현재 7차 순환까지 등록 완료)";
         }
 
         const actionArea = document.getElementById('blackoutActionArea');
@@ -3076,8 +3153,8 @@
     }
 
     function resetLeaderQueueToDefault() {
-      if (confirm('6차 릴레이 기본 25순번(김은진 3회, 김태홍 2회, 유정심 리더, 류고운, 최순호 포함)으로 초기화하시겠습니까?')) {
-        schedulerConfig.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_QUEUE));
+      if (confirm('7차 릴레이 공식 25순번(최순호부터 이성령까지)으로 초기화하시겠습니까?')) {
+        schedulerConfig.leaderQueue = JSON.parse(JSON.stringify(DEFAULT_CYCLE_7_QUEUE));
         saveConfigData();
         generateDynamicSchedule();
         renderLeaderQueueUI();
@@ -3086,7 +3163,7 @@
         renderDateChips();
         renderDaySummary();
         renderTimeSlots();
-        showToast('기본 25순번으로 초기화되었습니다.', '🔄');
+        showToast('7차 기본 25순번으로 초기화되었습니다.', '🔄');
       }
     }
 
@@ -3309,11 +3386,11 @@
       showToast(`일정이 연장되어 ${schedulerConfig.maxRound}차 순환이 생성되었습니다!`, '📅');
     }
 
-    function resetToRound6() {
-      if (!confirm('정말로 7차 이후 등록된 일정을 모두 삭제하고 6차 순환까지만 유지하시겠습니까?')) return;
-      schedulerConfig.maxRound = 6;
+    function resetToRound7() {
+      if (!confirm('정말로 8차 이후 등록된 일정을 모두 삭제하고 7차 순환까지만 유지하시겠습니까?')) return;
+      schedulerConfig.maxRound = 7;
       Object.keys(prayerData).forEach(d => {
-        if (parseInt(d, 10) >= 159) delete prayerData[d];
+        if (parseInt(d, 10) >= 184) delete prayerData[d];
       });
       savePrayerData();
       saveConfigData();
@@ -3323,8 +3400,9 @@
       renderDaySummary();
       renderTimeSlots();
       renderScheduleRangeUI();
-      showToast('7차 이후 일정이 삭제되고 6차 순환까지만 남겼습니다.', '🗑️');
+      showToast('8차 이후 일정이 삭제되고 7차 순환까지만 남겼습니다.', '🗑️');
     }
+    const resetToRound6 = resetToRound7; // 하위 호환용
 
     // ========================================================
     // 13. 관리자 모드 & 인증 & 검색 & 통계 모달
@@ -4033,7 +4111,7 @@
         if (bookings) {
           const newPrayerData = {};
           bookings.forEach(b => {
-            if (parseInt(b.day_num, 10) >= 159) return;
+            if (parseInt(b.day_num, 10) >= 184) return;
             const dStr = b.day_num.toString();
             const hStr = b.hour.toString();
             if (!newPrayerData[dStr]) newPrayerData[dStr] = {};
@@ -4095,7 +4173,7 @@
         .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_bookings' }, (payload) => {
           const { eventType, new: newRec, old: oldRec } = payload;
           if (eventType === 'INSERT') {
-            if (parseInt(newRec.day_num, 10) >= 159) return;
+            if (parseInt(newRec.day_num, 10) >= 184) return;
             const dStr = newRec.day_num.toString();
             const hStr = newRec.hour.toString();
             if (!prayerData[dStr]) prayerData[dStr] = {};
