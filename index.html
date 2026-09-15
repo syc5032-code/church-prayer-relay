@@ -403,7 +403,19 @@
 
         <div id="cancelPinSection">
           <label class="block text-xs font-bold text-slate-700 mb-1">신청 시 입력한 비밀번호 4자리</label>
-          <input type="password" id="inputCancelPin" maxlength="4" placeholder="숫자 4자리" class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 tracking-widest text-center">
+          <input 
+            type="password" 
+            id="inputCancelPin" 
+            maxlength="4" 
+            pattern="[0-9]*" 
+            inputmode="numeric" 
+            placeholder="숫자 4자리" 
+            class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 tracking-widest text-center"
+            onkeydown="if(event.key === 'Enter') confirmCancelBooking();"
+          >
+          <p id="adminCancelBypassNotice" class="hidden text-[11px] text-amber-800 font-semibold mt-1.5 bg-amber-50 p-2 rounded-xl border border-amber-200 leading-snug">
+            👑 <strong>관리자 권한:</strong> 비밀번호를 비우고 [신청 취소]를 누르면 직권으로 즉시 취소됩니다.
+          </p>
         </div>
 
         <div class="pt-2 flex space-x-2">
@@ -2430,15 +2442,24 @@
     function promptCancelBooking(dayNum, hour, bookingId, userName) {
       pendingCancelTarget = { dayNum, hour, bookingId, userName };
       document.getElementById('cancelTargetInfo').innerHTML = `신청자: <strong>${escapeHtml(userName)}</strong> 님`;
-      document.getElementById('inputCancelPin').value = '';
+      const pinInput = document.getElementById('inputCancelPin');
+      pinInput.value = '';
 
+      const bypassNotice = document.getElementById('adminCancelBypassNotice');
       if (isAdminMode) {
-        document.getElementById('cancelPinSection').classList.add('hidden');
+        if (bypassNotice) bypassNotice.classList.remove('hidden');
       } else {
-        document.getElementById('cancelPinSection').classList.remove('hidden');
+        if (bypassNotice) bypassNotice.classList.add('hidden');
       }
 
+      // 비밀번호 입력칸은 항상 표시 (어떤 모드에서든 직관적으로 확인 가능)
+      const pinSec = document.getElementById('cancelPinSection');
+      if (pinSec) pinSec.classList.remove('hidden');
+
       document.getElementById('cancelModal').classList.remove('hidden');
+      setTimeout(() => {
+        pinInput.focus();
+      }, 100);
     }
 
     function closeCancelModal() {
@@ -2459,10 +2480,21 @@
         return;
       }
 
+      const pin = document.getElementById('inputCancelPin').value.trim();
+
       if (!isAdminMode) {
-        const pin = document.getElementById('inputCancelPin').value.trim();
+        if (!pin) {
+          showToast('비밀번호 4자리를 입력해주세요.', '⚠️');
+          return;
+        }
         if (pin !== target.pin) {
           showToast('비밀번호가 일치하지 않습니다.', '❌');
+          return;
+        }
+      } else {
+        // 관리자 모드: 비밀번호를 직접 입력했을 때 틀린 경우 안내
+        if (pin && pin !== target.pin) {
+          showToast('입력하신 비밀번호가 일치하지 않습니다. (비우고 누르시면 관리자 직권 취소)', '⚠️');
           return;
         }
       }
